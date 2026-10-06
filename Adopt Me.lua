@@ -8121,7 +8121,7 @@ EventTab:CreateToggle({ Name = "Stray Cat",       CurrentValue = Config.Farm.Eve
 EventTab:CreateSection("Pet Pen")
 EventTab:CreateParagraph({
     Title = "Pet Pen",
-    Content = "Runs the Pet Pen minigame on a timer. Minutes is how long each round lasts. Default slots is 4. Set slots to 5 only if you own the extra slot game pass. Pet Pen Stock also restocks the pen when it empties.",
+    Content = "Idle passive. Minutes is how often the farm claims your Pet Pen rewards. Default slots is 4. Set slots to 5 only if you own the extra slot game pass. Pet Pen Stock also restocks the pen when it empties.",
 })
 EventTab:CreateToggle({ Name = "Pet Pen",         CurrentValue = Config.Farm.Event.PetPen,       Flag = "PetPen",        Callback = function(v) Config.Farm.Event.PetPen = v end })
 EventTab:CreateSlider({ Name = "Pet Pen Minutes", Range = { 1, 60 }, Increment = 1, Suffix = "min",   CurrentValue = Config.Farm.Event.PetPenMinutes, Flag = "PetPenMinutes", Callback = function(v) Config.Farm.Event.PetPenMinutes = v end })
