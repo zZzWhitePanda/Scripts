@@ -3872,11 +3872,12 @@ __moduleSources["Game/Travel"] = function(...)
         return root and root.Position
     end
 
+    -- Returns true only if the character is CONFIRMED on MainMap (nil position = not placed yet, keep waiting).
     function Travel:_waitPlacedOnMainMap(seconds)
         local deadline = Util.now() + seconds
         while Util.now() < deadline do
             local p = rootPosition()
-            if not p or GameConstants.isOnMainMapArea(p) then
+            if p and GameConstants.isOnMainMapArea(p) then
                 return true
             end
             task.wait(0.25)
@@ -3884,20 +3885,42 @@ __moduleSources["Game/Travel"] = function(...)
         return false
     end
 
+    -- Verifies the character STAYS on MainMap after the initial placement. Live observation (user 2026-10-07):
+    -- game places character on MainMap for ~1 s then yanks it back into housing; interior state also flips back.
+    -- Must poll for a few seconds and confirm both physical position AND interior state hold steady.
+    function Travel:_stabilizeOnMainMap(seconds)
+        local deadline = Util.now() + seconds
+        while Util.now() < deadline do
+            local p = rootPosition()
+            local interior = self._state:get("player.interior")
+            if (not p) or (not GameConstants.isOnMainMapArea(p)) or interior == GameConstants.HouseInteriorName then
+                return false, string.format("yanked back (interior=%s, pos=(%s))", tostring(interior),
+                    p and string.format("%.0f, %.0f", p.X, p.Z) or "nil")
+            end
+            task.wait(0.5)
+        end
+        return true
+    end
+
     function Travel:_checkPlacedOnMainMap(recipe, me)
-        if self:_waitPlacedOnMainMap(8) then
-            return true
-        end
-        local p = rootPosition()
-        self._logger:warn("Travel", string.format("Data says MainMap but my character is still at (%.0f, %.0f) (an interior's"
-            .. " area): asking for MainMap once more", p.X, p.Z))
-        self._interaction:send("SetLocation", "MainMap", nil, recipe.spawn)
-        if self:_waitPlacedOnMainMap(8) then
+        if not self:_waitPlacedOnMainMap(8) then
+            local p = rootPosition()
+            self._logger:warn("Travel", string.format("Data says MainMap but my character is still at (%s): asking for MainMap once more",
+                p and string.format("%.0f, %.0f", p.X, p.Z) or "no character"))
+            self._interaction:send("SetLocation", "MainMap", nil, recipe.spawn)
+            if not self:_waitPlacedOnMainMap(8) then
+                local p2 = rootPosition()
+                return false, string.format("not placed on MainMap (character at %s)",
+                    p2 and string.format("%.0f, %.0f", p2.X, p2.Z) or "no character")
+            end
             self._logger:info("Travel", "Placed on MainMap after asking again")
-            return true
         end
-        p = rootPosition()
-        return false, string.format("not placed on MainMap (character at %.0f, %.0f)", p.X, p.Z)
+        -- Stability check: the kickback happens ~5-10s after arrival, so verify we actually stayed.
+        local stable, why = self:_stabilizeOnMainMap(6)
+        if not stable then
+            return false, "placed on MainMap but " .. tostring(why)
+        end
+        return true
     end
 
     -- 1.3.0: travel the way the game itself does. watch9/watch10 (2026-09-30): every door goes through the game's client
