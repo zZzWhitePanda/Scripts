@@ -6,7 +6,7 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Adopt Me Farm v1.4",
+    Name = "Adopt Me Farm  •  v1.4",
     LoadingTitle = "Adopt Me Farm",
     LoadingSubtitle = "by ENI",
     ConfigurationSaving = {
@@ -18,7 +18,9 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false,
 })
 
+----------------------------------------------------------------------------
 -- Live config table (mirrors the original UserConfig schema exactly)
+----------------------------------------------------------------------------
 local Config = {
     Farm = {
         Enabled = true,
@@ -75,122 +77,26 @@ local Config = {
     },
 }
 
--- Main
-local MainTab = Window:CreateTab("Main", 4483362458)
-MainTab:CreateToggle({ Name = "Farm Enabled", CurrentValue = Config.Farm.Enabled, Flag = "FarmEnabled", Callback = function(v) Config.Farm.Enabled = v end })
-MainTab:CreateToggle({ Name = "Baby Mode", CurrentValue = Config.Farm.BabyMode, Flag = "BabyMode", Callback = function(v) Config.Farm.BabyMode = v end })
-MainTab:CreateToggle({ Name = "Fast Travel", CurrentValue = Config.Farm.FastTravel, Flag = "FastTravel", Callback = function(v) Config.Farm.FastTravel = v end })
-MainTab:CreateToggle({ Name = "Buy Water", CurrentValue = Config.Farm.BuyWater, Flag = "BuyWater", Callback = function(v) Config.Farm.BuyWater = v end })
-MainTab:CreateToggle({ Name = "Buy Food", CurrentValue = Config.Farm.BuyFood, Flag = "BuyFood", Callback = function(v) Config.Farm.BuyFood = v end })
-MainTab:CreateInput({ Name = "Max Buys Per Session (0 = no limit)", CurrentValue = tostring(Config.Farm.MaxBuysPerSession), PlaceholderText = "0", RemoveTextAfterFocusLost = false, Flag = "MaxBuysPerSession", Callback = function(v) Config.Farm.MaxBuysPerSession = tonumber(v) or 0 end })
-MainTab:CreateToggle({ Name = "Auto Accept Menu", CurrentValue = Config.Farm.AutoAcceptMenu, Flag = "AutoAcceptMenu", Callback = function(v) Config.Farm.AutoAcceptMenu = v end })
-MainTab:CreateToggle({ Name = "Collect Cashback", CurrentValue = Config.Farm.CollectCashback, Flag = "CollectCashback", Callback = function(v) Config.Farm.CollectCashback = v end })
-MainTab:CreateDropdown({ Name = "Spot Travel", Options = { "teleport", "walk" }, CurrentOption = { Config.Farm.SpotTravel }, Flag = "SpotTravel", Callback = function(v) Config.Farm.SpotTravel = (type(v) == "table" and v[1]) or v end })
-MainTab:CreateToggle({ Name = "Keep Pet Equipped", CurrentValue = Config.Farm.KeepPetEquipped, Flag = "KeepPetEquipped", Callback = function(v) Config.Farm.KeepPetEquipped = v end })
-MainTab:CreateToggle({ Name = "Game Travel", CurrentValue = Config.Farm.GameTravel, Flag = "GameTravel", Callback = function(v) Config.Farm.GameTravel = v end })
-MainTab:CreateToggle({ Name = "Home By Respawn", CurrentValue = Config.Farm.HomeByRespawn, Flag = "HomeByRespawn", Callback = function(v) Config.Farm.HomeByRespawn = v end })
-MainTab:CreateToggle({ Name = "House Door Exit", CurrentValue = Config.Farm.HouseDoorExit, Flag = "HouseDoorExit", Callback = function(v) Config.Farm.HouseDoorExit = v end })
-MainTab:CreateToggle({ Name = "Skip Full Grown", CurrentValue = Config.Farm.SkipFullGrown, Flag = "SkipFullGrown", Callback = function(v) Config.Farm.SkipFullGrown = v end })
-MainTab:CreateToggle({ Name = "Anti AFK", CurrentValue = Config.Farm.AntiAfk, Flag = "AntiAfk", Callback = function(v) Config.Farm.AntiAfk = v end })
-
--- Eggs & Pets
-local EggTab = Window:CreateTab("Eggs & Pets", 4483362458)
-EggTab:CreateToggle({ Name = "Buy Egg (when no growing pet)", CurrentValue = Config.Farm.BuyEgg, Flag = "BuyEgg", Callback = function(v) Config.Farm.BuyEgg = v end })
-EggTab:CreateDropdown({ Name = "Egg To Buy", Options = { "cracked_egg", "pet_egg", "fairytale_egg_2026_fairytale_egg" }, CurrentOption = { Config.Farm.EggToBuy }, Flag = "EggToBuy", Callback = function(v) Config.Farm.EggToBuy = (type(v) == "table" and v[1]) or v end })
-EggTab:CreateInput({ Name = "Max Egg Buys Per Session (0 = no limit)", CurrentValue = tostring(Config.Farm.MaxEggBuysPerSession), PlaceholderText = "0", RemoveTextAfterFocusLost = false, Flag = "MaxEggBuysPerSession", Callback = function(v) Config.Farm.MaxEggBuysPerSession = tonumber(v) or 0 end })
-EggTab:CreateToggle({ Name = "Auto Potions Enabled", CurrentValue = Config.Farm.AutoPotions.Enabled, Flag = "AutoPotionsEnabled", Callback = function(v) Config.Farm.AutoPotions.Enabled = v end })
-EggTab:CreateInput({ Name = "Auto Potions Pet Kinds (comma-sep, empty = any)", CurrentValue = "", PlaceholderText = "dog, cat", RemoveTextAfterFocusLost = false, Flag = "AutoPotionsPetKinds", Callback = function(v)
-    local list = {}
-    for word in string.gmatch(v or "", "([^,%s]+)") do table.insert(list, word) end
-    Config.Farm.AutoPotions.PetKinds = list
-end })
-
--- Tasks
-local TasksTab = Window:CreateTab("Tasks", 4483362458)
-local function taskToggle(key, label)
-    TasksTab:CreateToggle({ Name = label, CurrentValue = Config.Farm.Tasks[key], Flag = "Task_" .. key, Callback = function(v) Config.Farm.Tasks[key] = v end })
-end
-taskToggle("pet_me", "Pet Me")
-taskToggle("salon", "Salon")
-taskToggle("bored", "Bored")
-taskToggle("cat_cafe", "Cat Cafe")
-taskToggle("sleepy", "Sleepy")
-taskToggle("dirty", "Dirty")
-taskToggle("toilet", "Toilet")
-taskToggle("hungry", "Hungry")
-taskToggle("thirsty", "Thirsty")
-taskToggle("play", "Play")
-taskToggle("pizza_party", "Pizza Party")
-taskToggle("school", "School")
-taskToggle("sick", "Sick")
-taskToggle("camping", "Camping")
-taskToggle("beach_party", "Beach Party")
-taskToggle("mystery", "Mystery")
-taskToggle("walk", "Walk")
-taskToggle("ride", "Ride")
-
--- Auto Open
-local OpenTab = Window:CreateTab("Auto Open", 4483362458)
-OpenTab:CreateToggle({ Name = "Auto Open Enabled", CurrentValue = Config.Farm.AutoOpen.Enabled, Flag = "AutoOpenEnabled", Callback = function(v) Config.Farm.AutoOpen.Enabled = v end })
-OpenTab:CreateInput({ Name = "Exclude (comma-sep, e.g. biggift)", CurrentValue = "", PlaceholderText = "biggift", RemoveTextAfterFocusLost = false, Flag = "AutoOpenExclude", Callback = function(v)
-    local list = {}
-    for word in string.gmatch(v or "", "([^,%s]+)") do table.insert(list, word) end
-    Config.Farm.AutoOpen.Exclude = list
-end })
-
--- Halloween Event
-local EventTab = Window:CreateTab("Halloween Event", 4483362458)
-EventTab:CreateToggle({ Name = "Event Enabled", CurrentValue = Config.Farm.Event.Enabled, Flag = "EventEnabled", Callback = function(v) Config.Farm.Event.Enabled = v end })
-EventTab:CreateToggle({ Name = "Ghost Gallery", CurrentValue = Config.Farm.Event.GhostGallery, Flag = "GhostGallery", Callback = function(v) Config.Farm.Event.GhostGallery = v end })
-EventTab:CreateToggle({ Name = "Crypt", CurrentValue = Config.Farm.Event.Crypt, Flag = "Crypt", Callback = function(v) Config.Farm.Event.Crypt = v end })
-EventTab:CreateToggle({ Name = "Mummy Spider", CurrentValue = Config.Farm.Event.MummySpider, Flag = "MummySpider", Callback = function(v) Config.Farm.Event.MummySpider = v end })
-EventTab:CreateToggle({ Name = "Quests", CurrentValue = Config.Farm.Event.Quests, Flag = "EventQuests", Callback = function(v) Config.Farm.Event.Quests = v end })
-EventTab:CreateToggle({ Name = "House Visits", CurrentValue = Config.Farm.Event.HouseVisits, Flag = "HouseVisits", Callback = function(v) Config.Farm.Event.HouseVisits = v end })
-EventTab:CreateToggle({ Name = "Pigeon Nest", CurrentValue = Config.Farm.Event.PigeonNest, Flag = "PigeonNest", Callback = function(v) Config.Farm.Event.PigeonNest = v end })
-EventTab:CreateToggle({ Name = "Stray Cat", CurrentValue = Config.Farm.Event.StrayCat, Flag = "StrayCat", Callback = function(v) Config.Farm.Event.StrayCat = v end })
-EventTab:CreateToggle({ Name = "Pet Pen", CurrentValue = Config.Farm.Event.PetPen, Flag = "PetPen", Callback = function(v) Config.Farm.Event.PetPen = v end })
-EventTab:CreateSlider({ Name = "Pet Pen Minutes", Range = { 1, 60 }, Increment = 1, Suffix = "min", CurrentValue = Config.Farm.Event.PetPenMinutes, Flag = "PetPenMinutes", Callback = function(v) Config.Farm.Event.PetPenMinutes = v end })
-EventTab:CreateSlider({ Name = "Pet Pen Slots", Range = { 1, 8 }, Increment = 1, Suffix = "slots", CurrentValue = Config.Farm.Event.PetPenSlots, Flag = "PetPenSlots", Callback = function(v) Config.Farm.Event.PetPenSlots = v end })
-EventTab:CreateToggle({ Name = "Pet Pen Stock", CurrentValue = Config.Farm.Event.PetPenStock, Flag = "PetPenStock", Callback = function(v) Config.Farm.Event.PetPenStock = v end })
-
--- Logging
-local LogTab = Window:CreateTab("Logging", 4483362458)
-LogTab:CreateDropdown({ Name = "Console Level", Options = { "OFF", "DEBUG", "INFO", "SUCCESS", "WARN", "ERROR" }, CurrentOption = { Config.Logging.ConsoleLevel }, Flag = "ConsoleLevel", Callback = function(v) Config.Logging.ConsoleLevel = (type(v) == "table" and v[1]) or v end })
-LogTab:CreateToggle({ Name = "File Enabled", CurrentValue = Config.Logging.FileEnabled, Flag = "LogFileEnabled", Callback = function(v) Config.Logging.FileEnabled = v end })
-LogTab:CreateToggle({ Name = "Session File", CurrentValue = Config.Logging.SessionFile, Flag = "LogSessionFile", Callback = function(v) Config.Logging.SessionFile = v end })
-
--- Telemetry
-local TeleTab = Window:CreateTab("Telemetry", 4483362458)
-TeleTab:CreateToggle({ Name = "Telemetry Enabled", CurrentValue = Config.Telemetry.Enabled, Flag = "TelemetryEnabled", Callback = function(v) Config.Telemetry.Enabled = v end })
-
--- Notifications
-local NotifTab = Window:CreateTab("Notifications", 4483362458)
-NotifTab:CreateToggle({ Name = "Notifications Enabled", CurrentValue = Config.Notifications.Enabled, Flag = "NotifEnabled", Callback = function(v) Config.Notifications.Enabled = v end })
-NotifTab:CreateInput({ Name = "Summary Webhook URL", CurrentValue = Config.Notifications.Webhooks.Summary, PlaceholderText = "https://discord.com/api/webhooks/...", RemoveTextAfterFocusLost = false, Flag = "WebhookSummary", Callback = function(v) Config.Notifications.Webhooks.Summary = v end })
-NotifTab:CreateInput({ Name = "Alerts Webhook URL", CurrentValue = Config.Notifications.Webhooks.Alerts, PlaceholderText = "https://discord.com/api/webhooks/...", RemoveTextAfterFocusLost = false, Flag = "WebhookAlerts", Callback = function(v) Config.Notifications.Webhooks.Alerts = v end })
-NotifTab:CreateSlider({ Name = "Summary Interval", Range = { 0, 240 }, Increment = 5, Suffix = "min", CurrentValue = Config.Notifications.SummaryIntervalMinutes, Flag = "SummaryInterval", Callback = function(v) Config.Notifications.SummaryIntervalMinutes = v end })
-NotifTab:CreateToggle({ Name = "Send On Task Complete", CurrentValue = Config.Notifications.SendOnTaskComplete, Flag = "SendOnTaskComplete", Callback = function(v) Config.Notifications.SendOnTaskComplete = v end })
-NotifTab:CreateToggle({ Name = "Send On Error", CurrentValue = Config.Notifications.SendOnError, Flag = "SendOnError", Callback = function(v) Config.Notifications.SendOnError = v end })
-NotifTab:CreateToggle({ Name = "Send On Kick", CurrentValue = Config.Notifications.SendOnKick, Flag = "SendOnKick", Callback = function(v) Config.Notifications.SendOnKick = v end })
-NotifTab:CreateToggle({ Name = "Send On Start/Stop", CurrentValue = Config.Notifications.SendOnStartStop, Flag = "SendOnStartStop", Callback = function(v) Config.Notifications.SendOnStartStop = v end })
-NotifTab:CreateToggle({ Name = "Send Test Message On Start", CurrentValue = Config.Notifications.SendTestMessageOnStart, Flag = "SendTestOnStart", Callback = function(v) Config.Notifications.SendTestMessageOnStart = v end })
-NotifTab:CreateInput({ Name = "Ping Discord User ID (digits)", CurrentValue = Config.Notifications.PingDiscordUserId, PlaceholderText = "123456789012345678", RemoveTextAfterFocusLost = false, Flag = "PingUserId", Callback = function(v) Config.Notifications.PingDiscordUserId = v end })
-NotifTab:CreateToggle({ Name = "Include Username", CurrentValue = Config.Notifications.IncludeUsername, Flag = "IncludeUsername", Callback = function(v) Config.Notifications.IncludeUsername = v end })
-NotifTab:CreateToggle({ Name = "Ping On Kick", CurrentValue = Config.Notifications.PingOn.Kick, Flag = "PingOnKick", Callback = function(v) Config.Notifications.PingOn.Kick = v end })
-NotifTab:CreateToggle({ Name = "Ping On Error", CurrentValue = Config.Notifications.PingOn.Error, Flag = "PingOnError", Callback = function(v) Config.Notifications.PingOn.Error = v end })
-NotifTab:CreateToggle({ Name = "Ping On Summary", CurrentValue = Config.Notifications.PingOn.Summary, Flag = "PingOnSummary", Callback = function(v) Config.Notifications.PingOn.Summary = v end })
-NotifTab:CreateToggle({ Name = "Ping On Task Completed", CurrentValue = Config.Notifications.PingOn.TaskCompleted, Flag = "PingOnTaskCompleted", Callback = function(v) Config.Notifications.PingOn.TaskCompleted = v end })
-NotifTab:CreateToggle({ Name = "Ping On Session Stopped", CurrentValue = Config.Notifications.PingOn.SessionStopped, Flag = "PingOnSessionStopped", Callback = function(v) Config.Notifications.PingOn.SessionStopped = v end })
-NotifTab:CreateToggle({ Name = "Ping On Previous Session", CurrentValue = Config.Notifications.PingOn.PreviousSession, Flag = "PingOnPreviousSession", Callback = function(v) Config.Notifications.PingOn.PreviousSession = v end })
-
--- Control
+----------------------------------------------------------------------------
+--  CONTROL  (first tab — Start / Stop / status)
+----------------------------------------------------------------------------
 local CtrlTab = Window:CreateTab("Control", 4483362458)
+
+CtrlTab:CreateSection("Run the farm")
+CtrlTab:CreateParagraph({
+    Title = "How this works",
+    Content = "Set your options in the other tabs, then press Start Farm. The script runs in the background. Press Stop Farm to end the session cleanly. All of your toggles save automatically to AdoptMeFarm/RayfieldConfig — next launch picks up right where you left off.",
+})
+
 local started = false
 
 local function stopFarm()
     local env = (type(getgenv) == "function" and getgenv()) or _G
     local api = env.AdoptMeFarm
-    if type(api) == "table" and type(api.stop) == "function" then
+    if type(api) == "table" and type(api.Stop) == "function" then
+        pcall(api.Stop)
+        Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Stopped.", Duration = 4 })
+    elseif type(api) == "table" and type(api.stop) == "function" then
         pcall(api.stop)
         Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Stopped.", Duration = 4 })
     else
@@ -206,8 +112,15 @@ local function startFarm()
     started = true
     local env = (type(getgenv) == "function" and getgenv()) or _G
     env.AdoptMeFarmSettings = Config
-    Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Starting...", Duration = 4 })
+    Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Starting silently (console muted).", Duration = 4 })
     task.spawn(function()
+        -- Silence ALL console output from the farm. Lua lexical scoping means every
+        -- `print(...)` / `warn(...)` call inside the inlined modules below resolves to
+        -- these local no-ops. Nothing bypasses this — not even Logger:report (which
+        -- used to force the Disclosure block through regardless of ConsoleLevel).
+        local print = function() end
+        local warn = function() end
+
         local UserConfig = Config  -- shim for the original SETTINGS block reference
         --==================================================================================
         --  PROGRAM  (modules below are bundled from separate source files)
@@ -7866,7 +7779,522 @@ end
 end
 
 CtrlTab:CreateButton({ Name = "Start Farm", Callback = startFarm })
-CtrlTab:CreateButton({ Name = "Stop Farm", Callback = stopFarm })
+CtrlTab:CreateButton({ Name = "Stop Farm",  Callback = stopFarm })
+
+CtrlTab:CreateSection("About the white screen")
+CtrlTab:CreateParagraph({
+    Title = "Stuck on a white loading screen?",
+    Content = "That is Roblox's own place-change screen getting stuck during a teleport, not the farm. The farm has a built-in watchdog that detects it and respawns you home after ~25 seconds. If it happens often, switch Spot Travel from 'teleport' to 'walk' in the Travel tab — walking never triggers the white-screen loader.",
+})
+
 CtrlTab:CreateButton({ Name = "Unload GUI", Callback = function() Rayfield:Destroy() end })
+
+----------------------------------------------------------------------------
+--  TRAVEL  (movement + teleport behaviour)
+----------------------------------------------------------------------------
+local TravelTab = Window:CreateTab("Travel", 4483362458)
+
+TravelTab:CreateSection("Movement")
+TravelTab:CreateParagraph({
+    Title = "Spot Travel",
+    Content = "How the farm moves to each task spot inside the house. 'teleport' is fast but can cause Roblox to flash the white loading screen when the server is laggy. 'walk' is slower but completely silent and safe.",
+})
+TravelTab:CreateDropdown({
+    Name = "Spot Travel",
+    Options = { "teleport", "walk" },
+    CurrentOption = { Config.Farm.SpotTravel },
+    Flag = "SpotTravel",
+    Callback = function(v) Config.Farm.SpotTravel = (type(v) == "table" and v[1]) or v end,
+})
+TravelTab:CreateToggle({
+    Name = "Fast Travel",
+    CurrentValue = Config.Farm.FastTravel,
+    Flag = "FastTravel",
+    Callback = function(v) Config.Farm.FastTravel = v end,
+})
+TravelTab:CreateToggle({
+    Name = "Game Travel",
+    CurrentValue = Config.Farm.GameTravel,
+    Flag = "GameTravel",
+    Callback = function(v) Config.Farm.GameTravel = v end,
+})
+
+TravelTab:CreateSection("Home & recovery")
+TravelTab:CreateParagraph({
+    Title = "Home By Respawn",
+    Content = "Uses the game's respawn remote to go home fast and to recover when stuck on a loading screen. Recommended on.",
+})
+TravelTab:CreateToggle({
+    Name = "Home By Respawn",
+    CurrentValue = Config.Farm.HomeByRespawn,
+    Flag = "HomeByRespawn",
+    Callback = function(v) Config.Farm.HomeByRespawn = v end,
+})
+TravelTab:CreateToggle({
+    Name = "House Door Exit",
+    CurrentValue = Config.Farm.HouseDoorExit,
+    Flag = "HouseDoorExit",
+    Callback = function(v) Config.Farm.HouseDoorExit = v end,
+})
+
+----------------------------------------------------------------------------
+--  FARM  (core farm behaviour)
+----------------------------------------------------------------------------
+local FarmTab = Window:CreateTab("Farm", 4483362458)
+
+FarmTab:CreateSection("Core")
+FarmTab:CreateToggle({
+    Name = "Farm Enabled",
+    CurrentValue = Config.Farm.Enabled,
+    Flag = "FarmEnabled",
+    Callback = function(v) Config.Farm.Enabled = v end,
+})
+FarmTab:CreateToggle({
+    Name = "Baby Mode",
+    CurrentValue = Config.Farm.BabyMode,
+    Flag = "BabyMode",
+    Callback = function(v) Config.Farm.BabyMode = v end,
+})
+FarmTab:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = Config.Farm.AntiAfk,
+    Flag = "AntiAfk",
+    Callback = function(v) Config.Farm.AntiAfk = v end,
+})
+
+FarmTab:CreateSection("Shop & money")
+FarmTab:CreateParagraph({
+    Title = "Buying water / food",
+    Content = "Auto-buys from the shop when the pet needs it. 'Max Buys Per Session' caps total purchases per run — leave at 0 for no limit.",
+})
+FarmTab:CreateToggle({
+    Name = "Buy Water",
+    CurrentValue = Config.Farm.BuyWater,
+    Flag = "BuyWater",
+    Callback = function(v) Config.Farm.BuyWater = v end,
+})
+FarmTab:CreateToggle({
+    Name = "Buy Food",
+    CurrentValue = Config.Farm.BuyFood,
+    Flag = "BuyFood",
+    Callback = function(v) Config.Farm.BuyFood = v end,
+})
+FarmTab:CreateInput({
+    Name = "Max Buys Per Session (0 = no limit)",
+    CurrentValue = tostring(Config.Farm.MaxBuysPerSession),
+    PlaceholderText = "0",
+    RemoveTextAfterFocusLost = false,
+    Flag = "MaxBuysPerSession",
+    Callback = function(v) Config.Farm.MaxBuysPerSession = tonumber(v) or 0 end,
+})
+FarmTab:CreateToggle({
+    Name = "Collect Cashback",
+    CurrentValue = Config.Farm.CollectCashback,
+    Flag = "CollectCashback",
+    Callback = function(v) Config.Farm.CollectCashback = v end,
+})
+
+FarmTab:CreateSection("Menus")
+FarmTab:CreateParagraph({
+    Title = "Auto Accept Menu",
+    Content = "Automatically dismisses the Play / Choose Team menu after joining so the farm can start.",
+})
+FarmTab:CreateToggle({
+    Name = "Auto Accept Menu",
+    CurrentValue = Config.Farm.AutoAcceptMenu,
+    Flag = "AutoAcceptMenu",
+    Callback = function(v) Config.Farm.AutoAcceptMenu = v end,
+})
+
+----------------------------------------------------------------------------
+--  TASKS  (which pet needs the farm handles)
+----------------------------------------------------------------------------
+local TasksTab = Window:CreateTab("Tasks", 4483362458)
+
+TasksTab:CreateSection("Pet needs")
+TasksTab:CreateParagraph({
+    Title = "Choose what the farm does",
+    Content = "Each toggle enables one task. If a toggle is off, the farm will skip that need (e.g. turn 'sleepy' off and your pet will not be taken to bed).",
+})
+
+local function taskToggle(key, label)
+    TasksTab:CreateToggle({
+        Name = label,
+        CurrentValue = Config.Farm.Tasks[key],
+        Flag = "Task_" .. key,
+        Callback = function(v) Config.Farm.Tasks[key] = v end,
+    })
+end
+
+TasksTab:CreateSection("Basic needs")
+taskToggle("hungry",      "Hungry")
+taskToggle("thirsty",     "Thirsty")
+taskToggle("sleepy",      "Sleepy")
+taskToggle("dirty",       "Dirty")
+taskToggle("toilet",      "Toilet")
+taskToggle("sick",        "Sick")
+
+TasksTab:CreateSection("Play & attention")
+taskToggle("pet_me",      "Pet Me")
+taskToggle("bored",       "Bored")
+taskToggle("play",        "Play")
+taskToggle("walk",        "Walk")
+taskToggle("ride",        "Ride")
+
+TasksTab:CreateSection("Outings")
+taskToggle("salon",       "Salon")
+taskToggle("cat_cafe",    "Cat Cafe")
+taskToggle("pizza_party", "Pizza Party")
+taskToggle("school",      "School")
+taskToggle("camping",     "Camping")
+taskToggle("beach_party", "Beach Party")
+taskToggle("mystery",     "Mystery")
+
+----------------------------------------------------------------------------
+--  PETS  (eggs, potions, keep-equipped)
+----------------------------------------------------------------------------
+local PetTab = Window:CreateTab("Pets", 4483362458)
+
+PetTab:CreateSection("Equipped pet")
+PetTab:CreateParagraph({
+    Title = "Keep Pet Equipped",
+    Content = "Always have one pet equipped (any pet is fine) and never farm a full-grown one. The game sometimes swaps you to a grown pet — this re-equips a pet that can still grow.",
+})
+PetTab:CreateToggle({
+    Name = "Keep Pet Equipped",
+    CurrentValue = Config.Farm.KeepPetEquipped,
+    Flag = "KeepPetEquipped",
+    Callback = function(v) Config.Farm.KeepPetEquipped = v end,
+})
+PetTab:CreateToggle({
+    Name = "Skip Full Grown",
+    CurrentValue = Config.Farm.SkipFullGrown,
+    Flag = "SkipFullGrown",
+    Callback = function(v) Config.Farm.SkipFullGrown = v end,
+})
+
+PetTab:CreateSection("Eggs")
+PetTab:CreateParagraph({
+    Title = "Egg buying",
+    Content = "If you have no pet or every pet is full grown, buy one egg and farm it to adulthood. Options: cracked_egg (350 Bucks) • pet_egg (600 Bucks) • fairytale_egg_2026_fairytale_egg (event). royal_egg is Robux-only and is never bought.",
+})
+PetTab:CreateToggle({
+    Name = "Buy Egg (when no growing pet)",
+    CurrentValue = Config.Farm.BuyEgg,
+    Flag = "BuyEgg",
+    Callback = function(v) Config.Farm.BuyEgg = v end,
+})
+PetTab:CreateDropdown({
+    Name = "Egg To Buy",
+    Options = { "cracked_egg", "pet_egg", "fairytale_egg_2026_fairytale_egg" },
+    CurrentOption = { Config.Farm.EggToBuy },
+    Flag = "EggToBuy",
+    Callback = function(v) Config.Farm.EggToBuy = (type(v) == "table" and v[1]) or v end,
+})
+PetTab:CreateInput({
+    Name = "Max Egg Buys Per Session (0 = no limit)",
+    CurrentValue = tostring(Config.Farm.MaxEggBuysPerSession),
+    PlaceholderText = "0",
+    RemoveTextAfterFocusLost = false,
+    Flag = "MaxEggBuysPerSession",
+    Callback = function(v) Config.Farm.MaxEggBuysPerSession = tonumber(v) or 0 end,
+})
+
+PetTab:CreateSection("Age potions")
+PetTab:CreateParagraph({
+    Title = "Auto Potions",
+    Content = "Uses age potions in your inventory on the currently equipped pet (only if it can still grow). Pet Kinds restricts potion use to specific pets — leave blank to use on whatever pet is being farmed.",
+})
+PetTab:CreateToggle({
+    Name = "Auto Potions Enabled",
+    CurrentValue = Config.Farm.AutoPotions.Enabled,
+    Flag = "AutoPotionsEnabled",
+    Callback = function(v) Config.Farm.AutoPotions.Enabled = v end,
+})
+PetTab:CreateInput({
+    Name = "Pet Kinds (comma-sep, empty = any)",
+    CurrentValue = "",
+    PlaceholderText = "dog, cat",
+    RemoveTextAfterFocusLost = false,
+    Flag = "AutoPotionsPetKinds",
+    Callback = function(v)
+        local list = {}
+        for word in string.gmatch(v or "", "([^,%s]+)") do table.insert(list, word) end
+        Config.Farm.AutoPotions.PetKinds = list
+    end,
+})
+
+PetTab:CreateSection("Auto open backpack")
+PetTab:CreateParagraph({
+    Title = "Auto Open",
+    Content = "Opens gifts and chests sitting in your backpack. Add names to Exclude (e.g. biggift) to keep certain things sealed.",
+})
+PetTab:CreateToggle({
+    Name = "Auto Open Enabled",
+    CurrentValue = Config.Farm.AutoOpen.Enabled,
+    Flag = "AutoOpenEnabled",
+    Callback = function(v) Config.Farm.AutoOpen.Enabled = v end,
+})
+PetTab:CreateInput({
+    Name = "Exclude (comma-sep, e.g. biggift)",
+    CurrentValue = "",
+    PlaceholderText = "biggift",
+    RemoveTextAfterFocusLost = false,
+    Flag = "AutoOpenExclude",
+    Callback = function(v)
+        local list = {}
+        for word in string.gmatch(v or "", "([^,%s]+)") do table.insert(list, word) end
+        Config.Farm.AutoOpen.Exclude = list
+    end,
+})
+
+----------------------------------------------------------------------------
+--  HALLOWEEN EVENT 2026 + PET PEN
+----------------------------------------------------------------------------
+local EventTab = Window:CreateTab("Halloween Event", 4483362458)
+
+EventTab:CreateSection("Event master switch")
+EventTab:CreateParagraph({
+    Title = "Halloween 2026 + Pet Pen",
+    Content = "Toggle each event activity below. Turning the master switch off disables every event task regardless of the per-activity toggles.",
+})
+EventTab:CreateToggle({ Name = "Event Enabled",      CurrentValue = Config.Farm.Event.Enabled,      Flag = "EventEnabled",  Callback = function(v) Config.Farm.Event.Enabled = v end })
+
+EventTab:CreateSection("Activities")
+EventTab:CreateToggle({ Name = "Ghost Gallery",      CurrentValue = Config.Farm.Event.GhostGallery, Flag = "GhostGallery",  Callback = function(v) Config.Farm.Event.GhostGallery = v end })
+EventTab:CreateToggle({ Name = "Crypt",              CurrentValue = Config.Farm.Event.Crypt,        Flag = "Crypt",         Callback = function(v) Config.Farm.Event.Crypt = v end })
+EventTab:CreateToggle({ Name = "Mummy Spider",       CurrentValue = Config.Farm.Event.MummySpider,  Flag = "MummySpider",   Callback = function(v) Config.Farm.Event.MummySpider = v end })
+EventTab:CreateToggle({ Name = "Quests",             CurrentValue = Config.Farm.Event.Quests,       Flag = "EventQuests",   Callback = function(v) Config.Farm.Event.Quests = v end })
+EventTab:CreateToggle({ Name = "House Visits",       CurrentValue = Config.Farm.Event.HouseVisits,  Flag = "HouseVisits",   Callback = function(v) Config.Farm.Event.HouseVisits = v end })
+EventTab:CreateToggle({ Name = "Pigeon Nest",        CurrentValue = Config.Farm.Event.PigeonNest,   Flag = "PigeonNest",    Callback = function(v) Config.Farm.Event.PigeonNest = v end })
+EventTab:CreateToggle({ Name = "Stray Cat",          CurrentValue = Config.Farm.Event.StrayCat,     Flag = "StrayCat",      Callback = function(v) Config.Farm.Event.StrayCat = v end })
+
+EventTab:CreateSection("Pet Pen")
+EventTab:CreateParagraph({
+    Title = "Pet Pen",
+    Content = "Runs the Pet Pen minigame on a timer. Minutes = how long each round lasts; Slots = how many pet slots to fill. Pet Pen Stock also restocks the pen when it empties.",
+})
+EventTab:CreateToggle({ Name = "Pet Pen",            CurrentValue = Config.Farm.Event.PetPen,       Flag = "PetPen",        Callback = function(v) Config.Farm.Event.PetPen = v end })
+EventTab:CreateSlider({ Name = "Pet Pen Minutes", Range = { 1, 60 }, Increment = 1, Suffix = "min",   CurrentValue = Config.Farm.Event.PetPenMinutes, Flag = "PetPenMinutes", Callback = function(v) Config.Farm.Event.PetPenMinutes = v end })
+EventTab:CreateSlider({ Name = "Pet Pen Slots",   Range = { 1, 8 },  Increment = 1, Suffix = "slots", CurrentValue = Config.Farm.Event.PetPenSlots,   Flag = "PetPenSlots",   Callback = function(v) Config.Farm.Event.PetPenSlots = v end })
+EventTab:CreateToggle({ Name = "Pet Pen Stock",      CurrentValue = Config.Farm.Event.PetPenStock,  Flag = "PetPenStock",   Callback = function(v) Config.Farm.Event.PetPenStock = v end })
+
+----------------------------------------------------------------------------
+--  LOGGING  (console / file)
+----------------------------------------------------------------------------
+local LogTab = Window:CreateTab("Logging", 4483362458)
+
+LogTab:CreateSection("Console")
+LogTab:CreateParagraph({
+    Title = "Note",
+    Content = "This GUI edition silences every print and warn call from the farm so your console stays clean regardless of this setting. The setting below only affects behaviour if you later unmute output.",
+})
+LogTab:CreateDropdown({
+    Name = "Console Level",
+    Options = { "OFF", "DEBUG", "INFO", "SUCCESS", "WARN", "ERROR" },
+    CurrentOption = { Config.Logging.ConsoleLevel },
+    Flag = "ConsoleLevel",
+    Callback = function(v) Config.Logging.ConsoleLevel = (type(v) == "table" and v[1]) or v end,
+})
+
+LogTab:CreateSection("File")
+LogTab:CreateParagraph({
+    Title = "Log file",
+    Content = "When enabled, writes a log file to AdoptMeFarm/logs/ on your exploit's workspace. Session File writes a one-per-session summary file alongside it.",
+})
+LogTab:CreateToggle({ Name = "File Enabled",  CurrentValue = Config.Logging.FileEnabled,  Flag = "LogFileEnabled",  Callback = function(v) Config.Logging.FileEnabled = v end })
+LogTab:CreateToggle({ Name = "Session File",  CurrentValue = Config.Logging.SessionFile,  Flag = "LogSessionFile",  Callback = function(v) Config.Logging.SessionFile = v end })
+
+----------------------------------------------------------------------------
+--  TELEMETRY
+----------------------------------------------------------------------------
+local TeleTab = Window:CreateTab("Telemetry", 4483362458)
+TeleTab:CreateSection("Developer telemetry")
+TeleTab:CreateParagraph({
+    Title = "What this is",
+    Content = "The script's author collects anonymous usage data (session summary, bucks, candy, rounds) + any warnings/errors every 30 min. Turn this off to disable all outbound telemetry — the farm itself still works normally.",
+})
+TeleTab:CreateToggle({
+    Name = "Telemetry Enabled",
+    CurrentValue = Config.Telemetry.Enabled,
+    Flag = "TelemetryEnabled",
+    Callback = function(v) Config.Telemetry.Enabled = v end,
+})
+
+----------------------------------------------------------------------------
+--  NOTIFICATIONS  (Discord webhooks — OPTIONAL, OFF unless you fill a URL)
+----------------------------------------------------------------------------
+local NotifTab = Window:CreateTab("Notifications", 4483362458)
+
+NotifTab:CreateSection("Discord webhooks")
+NotifTab:CreateParagraph({
+    Title = "Optional — off by default",
+    Content = "Discord webhooks are OPTIONAL and OFF by default. Nothing is sent anywhere unless you paste a webhook URL below. Summary = periodic session reports, Alerts = kick/error pings.",
+})
+NotifTab:CreateToggle({
+    Name = "Notifications Enabled",
+    CurrentValue = Config.Notifications.Enabled,
+    Flag = "NotifEnabled",
+    Callback = function(v) Config.Notifications.Enabled = v end,
+})
+NotifTab:CreateInput({
+    Name = "Summary Webhook URL",
+    CurrentValue = Config.Notifications.Webhooks.Summary,
+    PlaceholderText = "https://discord.com/api/webhooks/...",
+    RemoveTextAfterFocusLost = false,
+    Flag = "WebhookSummary",
+    Callback = function(v) Config.Notifications.Webhooks.Summary = v end,
+})
+NotifTab:CreateInput({
+    Name = "Alerts Webhook URL",
+    CurrentValue = Config.Notifications.Webhooks.Alerts,
+    PlaceholderText = "https://discord.com/api/webhooks/...",
+    RemoveTextAfterFocusLost = false,
+    Flag = "WebhookAlerts",
+    Callback = function(v) Config.Notifications.Webhooks.Alerts = v end,
+})
+
+NotifTab:CreateSection("When to send")
+NotifTab:CreateSlider({
+    Name = "Summary Interval",
+    Range = { 0, 240 }, Increment = 5, Suffix = "min",
+    CurrentValue = Config.Notifications.SummaryIntervalMinutes,
+    Flag = "SummaryInterval",
+    Callback = function(v) Config.Notifications.SummaryIntervalMinutes = v end,
+})
+NotifTab:CreateParagraph({
+    Title = "Per-event triggers",
+    Content = "Send On Task Complete is spammy — one message per completed pet need. Everything else is reasonable.",
+})
+NotifTab:CreateToggle({ Name = "Send On Task Complete",      CurrentValue = Config.Notifications.SendOnTaskComplete,      Flag = "SendOnTaskComplete", Callback = function(v) Config.Notifications.SendOnTaskComplete = v end })
+NotifTab:CreateToggle({ Name = "Send On Error",              CurrentValue = Config.Notifications.SendOnError,             Flag = "SendOnError",        Callback = function(v) Config.Notifications.SendOnError = v end })
+NotifTab:CreateToggle({ Name = "Send On Kick",               CurrentValue = Config.Notifications.SendOnKick,              Flag = "SendOnKick",         Callback = function(v) Config.Notifications.SendOnKick = v end })
+NotifTab:CreateToggle({ Name = "Send On Start/Stop",         CurrentValue = Config.Notifications.SendOnStartStop,         Flag = "SendOnStartStop",    Callback = function(v) Config.Notifications.SendOnStartStop = v end })
+NotifTab:CreateToggle({ Name = "Send Test Message On Start", CurrentValue = Config.Notifications.SendTestMessageOnStart,  Flag = "SendTestOnStart",    Callback = function(v) Config.Notifications.SendTestMessageOnStart = v end })
+
+NotifTab:CreateSection("Ping")
+NotifTab:CreateParagraph({
+    Title = "Discord @mention",
+    Content = "Paste your Discord user ID (digits only) to be @-mentioned in the webhook messages you selected below.",
+})
+NotifTab:CreateInput({
+    Name = "Ping Discord User ID (digits)",
+    CurrentValue = Config.Notifications.PingDiscordUserId,
+    PlaceholderText = "123456789012345678",
+    RemoveTextAfterFocusLost = false,
+    Flag = "PingUserId",
+    Callback = function(v) Config.Notifications.PingDiscordUserId = v end,
+})
+NotifTab:CreateToggle({ Name = "Include Roblox Username",   CurrentValue = Config.Notifications.IncludeUsername,          Flag = "IncludeUsername",       Callback = function(v) Config.Notifications.IncludeUsername = v end })
+NotifTab:CreateToggle({ Name = "Ping On Kick",              CurrentValue = Config.Notifications.PingOn.Kick,              Flag = "PingOnKick",            Callback = function(v) Config.Notifications.PingOn.Kick = v end })
+NotifTab:CreateToggle({ Name = "Ping On Error",             CurrentValue = Config.Notifications.PingOn.Error,             Flag = "PingOnError",           Callback = function(v) Config.Notifications.PingOn.Error = v end })
+NotifTab:CreateToggle({ Name = "Ping On Summary",           CurrentValue = Config.Notifications.PingOn.Summary,           Flag = "PingOnSummary",         Callback = function(v) Config.Notifications.PingOn.Summary = v end })
+NotifTab:CreateToggle({ Name = "Ping On Task Completed",    CurrentValue = Config.Notifications.PingOn.TaskCompleted,     Flag = "PingOnTaskCompleted",   Callback = function(v) Config.Notifications.PingOn.TaskCompleted = v end })
+NotifTab:CreateToggle({ Name = "Ping On Session Stopped",   CurrentValue = Config.Notifications.PingOn.SessionStopped,    Flag = "PingOnSessionStopped",  Callback = function(v) Config.Notifications.PingOn.SessionStopped = v end })
+NotifTab:CreateToggle({ Name = "Ping On Previous Session",  CurrentValue = Config.Notifications.PingOn.PreviousSession,   Flag = "PingOnPreviousSession", Callback = function(v) Config.Notifications.PingOn.PreviousSession = v end })
+
+----------------------------------------------------------------------------
+--  CONFIGS  (save / load named profiles)
+----------------------------------------------------------------------------
+local ConfigTab = Window:CreateTab("Configs", 4483362458)
+
+ConfigTab:CreateSection("Automatic save")
+ConfigTab:CreateParagraph({
+    Title = "Auto-save is on",
+    Content = "Every toggle, slider and dropdown saves automatically to AdoptMeFarm/RayfieldConfig.json the moment you change it. Next time you load the script, your settings come back automatically — nothing to click.",
+})
+
+ConfigTab:CreateSection("Named profiles")
+ConfigTab:CreateParagraph({
+    Title = "Save multiple setups",
+    Content = "Type a name and press Save Profile to snapshot the current settings. Load Profile restores a saved snapshot. Profiles live in AdoptMeFarm/profiles/.",
+})
+
+local profileName = "default"
+ConfigTab:CreateInput({
+    Name = "Profile Name",
+    CurrentValue = profileName,
+    PlaceholderText = "my-setup",
+    RemoveTextAfterFocusLost = true,
+    Flag = "ProfileName",
+    Callback = function(v) profileName = (v ~= "" and v) or "default" end,
+})
+
+local HttpService = game:GetService("HttpService")
+local function profilePath(name)
+    return "AdoptMeFarm/profiles/" .. name .. ".json"
+end
+local function ensureFolder()
+    if type(isfolder) == "function" and type(makefolder) == "function" then
+        if not isfolder("AdoptMeFarm") then makefolder("AdoptMeFarm") end
+        if not isfolder("AdoptMeFarm/profiles") then makefolder("AdoptMeFarm/profiles") end
+    end
+end
+
+local function deepMerge(dst, src)
+    for k, v in pairs(src) do
+        if type(v) == "table" and type(dst[k]) == "table" then
+            deepMerge(dst[k], v)
+        else
+            dst[k] = v
+        end
+    end
+end
+
+ConfigTab:CreateButton({
+    Name = "Save Profile",
+    Callback = function()
+        if type(writefile) ~= "function" then
+            Rayfield:Notify({ Title = "Configs", Content = "Executor has no writefile.", Duration = 4 })
+            return
+        end
+        ensureFolder()
+        local ok, encoded = pcall(HttpService.JSONEncode, HttpService, Config)
+        if not ok then
+            Rayfield:Notify({ Title = "Configs", Content = "Encode failed.", Duration = 4 })
+            return
+        end
+        pcall(writefile, profilePath(profileName), encoded)
+        Rayfield:Notify({ Title = "Configs", Content = "Saved profile: " .. profileName, Duration = 4 })
+    end,
+})
+ConfigTab:CreateButton({
+    Name = "Load Profile",
+    Callback = function()
+        if type(readfile) ~= "function" or type(isfile) ~= "function" then
+            Rayfield:Notify({ Title = "Configs", Content = "Executor has no readfile.", Duration = 4 })
+            return
+        end
+        local path = profilePath(profileName)
+        if not isfile(path) then
+            Rayfield:Notify({ Title = "Configs", Content = "No profile named: " .. profileName, Duration = 4 })
+            return
+        end
+        local raw = readfile(path)
+        local ok, decoded = pcall(HttpService.JSONDecode, HttpService, raw)
+        if not ok or type(decoded) ~= "table" then
+            Rayfield:Notify({ Title = "Configs", Content = "Decode failed.", Duration = 4 })
+            return
+        end
+        deepMerge(Config, decoded)
+        Rayfield:Notify({ Title = "Configs", Content = "Loaded: " .. profileName .. " (restart GUI to see values).", Duration = 6 })
+    end,
+})
+ConfigTab:CreateButton({
+    Name = "Delete Profile",
+    Callback = function()
+        if type(delfile) ~= "function" or type(isfile) ~= "function" then
+            Rayfield:Notify({ Title = "Configs", Content = "Executor has no delfile.", Duration = 4 })
+            return
+        end
+        local path = profilePath(profileName)
+        if not isfile(path) then
+            Rayfield:Notify({ Title = "Configs", Content = "No profile named: " .. profileName, Duration = 4 })
+            return
+        end
+        pcall(delfile, path)
+        Rayfield:Notify({ Title = "Configs", Content = "Deleted: " .. profileName, Duration = 4 })
+    end,
+})
 
 Rayfield:LoadConfiguration()
