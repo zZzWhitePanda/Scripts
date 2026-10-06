@@ -3386,11 +3386,22 @@ __moduleSources["Game/Interaction"] = function(...)
             canCheck = ok
             return y
         end
+        -- Wider stream radius + a brief wait so the map actually loads before we teleport.
+        -- Otherwise the character ends up floating in void and the game kicks us back home (white screen).
         local streamed = pcall(function()
-            player:RequestStreamAroundAsync(Vector3.new(spot.x, spot.y, spot.z), 15)
+            player:RequestStreamAroundAsync(Vector3.new(spot.x, spot.y, spot.z), 128)
         end)
         self._logger:debug("Action", "Stream around " .. spotName .. ": " .. (streamed and "requested" or "not available"))
+        if streamed then task.wait(1.5) end
         local ground = groundY()
+        -- If raycast found nothing yet, give streaming a bit more time before giving up.
+        if not ground and canCheck then
+            for _ = 1, 8 do
+                task.wait(0.5)
+                ground = groundY()
+                if ground then break end
+            end
+        end
         for attempt = 1, 3 do
             local ok, err = pcall(function()
                 character:PivotTo(CFrame.new(spot.x, ground and (ground + 3) or (spot.y + 2), spot.z))
@@ -4537,9 +4548,13 @@ __moduleSources["Game/Tasks"] = function(...)
                 local useTeleport = spotName and ctx.farmConfig.SpotTravel == "teleport"
                 -- Give the need a chance to start where I am (bored did at the MainMap spawn) before moving at all.
                 if spotName then
+                    -- "Started here" is only true if the task is ACTIVELY in progress at the current spot.
+                    -- Previously `current == nil` was treated as "started here", but `nil` also happens when
+                    -- the pet was unequipped during travel (needs for unequipped pets are filtered out). That
+                    -- caused the farm to sit at the MainMap spawn waiting for a task that never actually began.
                     local function startedHere()
                         local current = ctx.currentGroup(group.kind)
-                        return current == nil or current.anyInProgress
+                        return current ~= nil and current.anyInProgress
                     end
                     if ctx.waitUntil(startedHere, SPOT_WAIT_BEFORE_MOVE_SECONDS) then
                         ctx.logger:info("Tasks", group.kind .. " started where I am: not moving")
