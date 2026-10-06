@@ -2329,23 +2329,13 @@ __moduleSources["Game/GameConstants"] = function(...)
     --[[ Which of MY furniture fulfils which need. Only kinds whose effect was seen in my data:
          sleepy: basicbed (pet + baby, watch5), dirty: stylishshower (pet + baby, watch5),
          toilet: toilet (pet; rate 1/7 seen in session_20260927_095123). ]]
+    -- Substring patterns (lowercase). _keysOfKinds matches any furniture whose id contains ANY of these.
+    -- Works across every themed set (Halloween, Christmas, royal, modern, etc.) without hard-coding each name.
+    -- Pieces without a usable UseBlock get skipped automatically by findSpot, so false-positives are harmless.
     GameConstants.FurnitureForAilment = {
-        sleepy = {
-            "basicbed",
-            -- Halloween / scary variants
-            "scary_2021_grave_pet_bed",
-            "scary_2021_spider_web_bed",
-            "scary_2021_cage_crib",
-        },
-        -- watch8_20260928_123452 (the game, alt house): modernshower f-27 UseBlock for the baby AND the pet;
-        -- cheap_pet_bathtub_tutorial f-15 UseBlock for the pet (occupied UseBlock = pet). Pet-only: see below.
-        dirty = {
-            "stylishshower", "modernshower", "cheap_pet_bathtub_tutorial",
-            -- Halloween / scary variants
-            "scary_2021_toxic_waste_shower",
-            "scary_2021_slime_cauldron_bath",
-        },
-        toilet = { "toilet" },
+        sleepy = { "bed", "crib", "cradle", "cot", "hammock", "sleepingbag", "sleeping_bag", "coffin" },
+        dirty  = { "shower", "bath", "bathtub" },
+        toilet = { "toilet", "potty", "outhouse", "loo" },
     }
     -- watch8: pet on the free food bowl (occupied UseBlock = pet) -> hungry rate 1/7 -> completed (twice)
     GameConstants.PetFoodBowls = { "ailments_refresh_2024_cheap_food_bowl" }
@@ -4130,11 +4120,13 @@ __moduleSources["Game/Furniture"] = function(...)
         return setmetatable({ _gameData = gameData, _state = state }, Furniture)
     end
 
-    -- Keys of my furniture of the wanted kinds, from my data (sorted, so the choice is deterministic)
+    -- Keys of my furniture matching the wanted kinds. "kinds" are substring patterns (lowercase).
+    -- Any furniture whose id contains ANY pattern qualifies. Falls back to exact match too, so the
+    -- existing explicit names (e.g. "basicbed", "cheap_pet_bathtub_tutorial") still work.
     function Furniture:_keysOfKinds(kinds)
-        local wanted = {}
+        local patterns = {}
         for _, kind in ipairs(kinds) do
-            wanted[kind] = true
+            table.insert(patterns, string.lower(tostring(kind)))
         end
         local interior = self._gameData:get(GameConstants.DataKeys.Interior)
         local keys = {}
@@ -4142,14 +4134,34 @@ __moduleSources["Game/Furniture"] = function(...)
             return keys
         end
         for key, piece in pairs(interior.furniture) do
-            if type(piece) == "table" and wanted[piece.id] then
-                table.insert(keys, { key = tostring(key), kind = piece.id })
+            if type(piece) == "table" and type(piece.id) == "string" then
+                local lid = string.lower(piece.id)
+                for _, pat in ipairs(patterns) do
+                    if string.find(lid, pat, 1, true) then
+                        table.insert(keys, { key = tostring(key), kind = piece.id })
+                        break
+                    end
+                end
             end
         end
         table.sort(keys, function(a, b)
             return a.key < b.key
         end)
         return keys
+    end
+
+    -- Infer the UseBlock name for an unknown furniture kind, based on what the name hints at.
+    -- Beds / cribs / coffins = you sit/lay on them -> Seat1. Showers / baths / bowls = you stand at them -> UseBlock.
+    local function inferUseName(kind)
+        local lid = string.lower(tostring(kind))
+        local sitKeywords = { "bed", "crib", "cradle", "cot", "hammock", "sleepingbag", "sleeping_bag", "coffin", "chair", "throne", "stool", "bench" }
+        for _, kw in ipairs(sitKeywords) do
+            if string.find(lid, kw, 1, true) then return "Seat1" end
+        end
+        if string.find(lid, "toilet", 1, true) or string.find(lid, "potty", 1, true) or string.find(lid, "outhouse", 1, true) then
+            return "Seat1"
+        end
+        return "UseBlock"
     end
 
     -- The furniture model of one of MY pieces, or nil while it is not streamed in.
@@ -4191,9 +4203,15 @@ __moduleSources["Game/Furniture"] = function(...)
         end
         for _, candidate in ipairs(candidates) do
             local model = self:_findModel(candidate.key)
-            local useName = GameConstants.UseBlockForFurniture[candidate.kind]
+            local useName = GameConstants.UseBlockForFurniture[candidate.kind] or inferUseName(candidate.kind)
             local useBlocks = model and model:FindFirstChild("UseBlocks")
             local usePart = useBlocks and useName and useBlocks:FindFirstChild(useName)
+            -- If the inferred UseBlock isn't present, try the alternate one before giving up.
+            if useBlocks and not usePart then
+                local alt = (useName == "Seat1") and "UseBlock" or "Seat1"
+                usePart = useBlocks:FindFirstChild(alt)
+                if usePart then useName = alt end
+            end
             if usePart then
                 return {
                     key = candidate.key,
