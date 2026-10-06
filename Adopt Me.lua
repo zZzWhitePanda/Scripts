@@ -7031,7 +7031,19 @@ __moduleSources["Game/TaskManager"] = function(...)
         local current = self._gameData:firstEquippedPet()
         if current then
             self._lastPet = current
-            self._farmPet = self._farmPet or current
+            -- Follow the user's pet choice: if they manually equip a different growable pet,
+            -- switch the farm to that pet instead of re-equipping the previously-chosen one.
+            -- Full-grown pets are left alone here (SkipFullGrown logic rotates away from them).
+            local age = self._gameData:petAge(current)
+            local isGrowable = (age == nil) or (age < GameConstants.FullGrownAge)
+            if self._farmPet == nil then
+                self._farmPet = current
+            elseif isGrowable and current ~= self._farmPet then
+                if self._farmPet ~= current then
+                    self._logger:info("Tasks", "Following your pet choice: switching farm pet to " .. tostring(current))
+                end
+                self._farmPet = current
+            end
             if self._badPets then
                 self._badPets[current] = nil -- it can be equipped after all
             end
