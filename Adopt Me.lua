@@ -1,13 +1,13 @@
 --[[
-    Adopt Me Farm  v1.4  —  Rayfield GUI Edition
+    Adopt Me Farm  by  zZzWhitePanda
 ]]
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Adopt Me Farm  •  v1.4",
+    Name = "Adopt Me Farm",
     LoadingTitle = "Adopt Me Farm",
-    LoadingSubtitle = "by ENI",
+    LoadingSubtitle = "by zZzWhitePanda",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "AdoptMeFarm",
@@ -18,7 +18,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 ----------------------------------------------------------------------------
--- Live config table (mirrors the original UserConfig schema)
+-- Live config
 ----------------------------------------------------------------------------
 local Config = {
     Farm = {
@@ -81,6 +81,11 @@ local Config = {
 ----------------------------------------------------------------------------
 local CtrlTab = Window:CreateTab("Control", 4483362458)
 
+CtrlTab:CreateParagraph({
+    Title = "Farm controls",
+    Content = "Use these to start and stop the whole farm. Unload GUI closes this window without stopping the farm.",
+})
+
 local started = false
 
 local function stopFarm()
@@ -104,7 +109,6 @@ local function startFarm()
     env.AdoptMeFarmSettings = Config
     Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Starting...", Duration = 4 })
     task.spawn(function()
-        -- Silence all farm output.
         local print = function() end
         local warn = function() end
 
@@ -7774,6 +7778,10 @@ CtrlTab:CreateButton({ Name = "Unload GUI",  Callback = function() Rayfield:Dest
 ----------------------------------------------------------------------------
 local TravelTab = Window:CreateTab("Travel", 4483362458)
 
+TravelTab:CreateParagraph({
+    Title = "Movement",
+    Content = "Teleport is faster but can cause the Roblox white loading screen on laggy servers. Walk is slower but never triggers it.",
+})
 TravelTab:CreateDropdown({
     Name = "Spot Travel",
     Options = { "teleport", "walk" },
@@ -7783,6 +7791,11 @@ TravelTab:CreateDropdown({
 })
 TravelTab:CreateToggle({ Name = "Fast Travel",      CurrentValue = Config.Farm.FastTravel,     Flag = "FastTravel",     Callback = function(v) Config.Farm.FastTravel = v end })
 TravelTab:CreateToggle({ Name = "Game Travel",      CurrentValue = Config.Farm.GameTravel,     Flag = "GameTravel",     Callback = function(v) Config.Farm.GameTravel = v end })
+
+TravelTab:CreateParagraph({
+    Title = "Home and recovery",
+    Content = "Home By Respawn uses the game's respawn to go home fast and recover if stuck. House Door Exit leaves through the door instead.",
+})
 TravelTab:CreateToggle({ Name = "Home By Respawn",  CurrentValue = Config.Farm.HomeByRespawn,  Flag = "HomeByRespawn",  Callback = function(v) Config.Farm.HomeByRespawn = v end })
 TravelTab:CreateToggle({ Name = "House Door Exit",  CurrentValue = Config.Farm.HouseDoorExit,  Flag = "HouseDoorExit",  Callback = function(v) Config.Farm.HouseDoorExit = v end })
 
@@ -7792,11 +7805,19 @@ TravelTab:CreateToggle({ Name = "House Door Exit",  CurrentValue = Config.Farm.H
 local FarmTab = Window:CreateTab("Farm", 4483362458)
 
 FarmTab:CreateSection("Core")
+FarmTab:CreateParagraph({
+    Title = "Master switch",
+    Content = "Farm Enabled is the main power. If this is off, nothing below runs. Baby Mode is for farming a baby pet instead of a grown one. Anti AFK keeps you from being kicked for being idle.",
+})
 FarmTab:CreateToggle({ Name = "Farm Enabled",       CurrentValue = Config.Farm.Enabled,         Flag = "FarmEnabled",       Callback = function(v) Config.Farm.Enabled = v end })
 FarmTab:CreateToggle({ Name = "Baby Mode",          CurrentValue = Config.Farm.BabyMode,        Flag = "BabyMode",          Callback = function(v) Config.Farm.BabyMode = v end })
 FarmTab:CreateToggle({ Name = "Anti AFK",           CurrentValue = Config.Farm.AntiAfk,         Flag = "AntiAfk",           Callback = function(v) Config.Farm.AntiAfk = v end })
 
 FarmTab:CreateSection("Shop")
+FarmTab:CreateParagraph({
+    Title = "Auto buying",
+    Content = "Buys water or food from the shop when the pet needs it. Max Buys Per Session caps total purchases per run. Set to 0 for no limit. Collect Cashback picks up your daily shop rebate.",
+})
 FarmTab:CreateToggle({ Name = "Buy Water",          CurrentValue = Config.Farm.BuyWater,        Flag = "BuyWater",          Callback = function(v) Config.Farm.BuyWater = v end })
 FarmTab:CreateToggle({ Name = "Buy Food",           CurrentValue = Config.Farm.BuyFood,         Flag = "BuyFood",           Callback = function(v) Config.Farm.BuyFood = v end })
 FarmTab:CreateInput({
@@ -7810,12 +7831,21 @@ FarmTab:CreateInput({
 FarmTab:CreateToggle({ Name = "Collect Cashback",   CurrentValue = Config.Farm.CollectCashback, Flag = "CollectCashback",   Callback = function(v) Config.Farm.CollectCashback = v end })
 
 FarmTab:CreateSection("Menus")
+FarmTab:CreateParagraph({
+    Title = "Auto Accept Menu",
+    Content = "Automatically closes the Play / Choose Team menu after joining so the farm can start on its own.",
+})
 FarmTab:CreateToggle({ Name = "Auto Accept Menu",   CurrentValue = Config.Farm.AutoAcceptMenu,  Flag = "AutoAcceptMenu",    Callback = function(v) Config.Farm.AutoAcceptMenu = v end })
 
 ----------------------------------------------------------------------------
 --  TASKS
 ----------------------------------------------------------------------------
 local TasksTab = Window:CreateTab("Tasks", 4483362458)
+
+TasksTab:CreateParagraph({
+    Title = "Pet tasks",
+    Content = "Each toggle enables one task. If a task is off, the farm skips that need. For example, turning Sleepy off means your pet will not be taken to bed.",
+})
 
 local function taskToggle(key, label)
     TasksTab:CreateToggle({
@@ -7834,7 +7864,7 @@ taskToggle("dirty",       "Dirty")
 taskToggle("toilet",      "Toilet")
 taskToggle("sick",        "Sick")
 
-TasksTab:CreateSection("Play & attention")
+TasksTab:CreateSection("Play and attention")
 taskToggle("pet_me",      "Pet Me")
 taskToggle("bored",       "Bored")
 taskToggle("play",        "Play")
@@ -7856,10 +7886,18 @@ taskToggle("mystery",     "Mystery")
 local PetTab = Window:CreateTab("Pets", 4483362458)
 
 PetTab:CreateSection("Equipped pet")
+PetTab:CreateParagraph({
+    Title = "Pet handling",
+    Content = "Keep Pet Equipped always makes sure one pet is out so needs can be farmed. Skip Full Grown avoids farming any pet that is already fully grown.",
+})
 PetTab:CreateToggle({ Name = "Keep Pet Equipped", CurrentValue = Config.Farm.KeepPetEquipped, Flag = "KeepPetEquipped", Callback = function(v) Config.Farm.KeepPetEquipped = v end })
 PetTab:CreateToggle({ Name = "Skip Full Grown",   CurrentValue = Config.Farm.SkipFullGrown,   Flag = "SkipFullGrown",   Callback = function(v) Config.Farm.SkipFullGrown = v end })
 
 PetTab:CreateSection("Eggs")
+PetTab:CreateParagraph({
+    Title = "Egg buying",
+    Content = "If you have no pet or all your pets are grown, the farm buys one egg and hatches it. Cracked Egg costs 350 Bucks, Pet Egg costs 600 Bucks, Fairytale is the current event egg. Max Egg Buys Per Session caps how many eggs it buys per run. Set to 0 for no limit.",
+})
 PetTab:CreateToggle({ Name = "Buy Egg (when no growing pet)", CurrentValue = Config.Farm.BuyEgg, Flag = "BuyEgg", Callback = function(v) Config.Farm.BuyEgg = v end })
 PetTab:CreateDropdown({
     Name = "Egg To Buy",
@@ -7878,9 +7916,13 @@ PetTab:CreateInput({
 })
 
 PetTab:CreateSection("Age potions")
+PetTab:CreateParagraph({
+    Title = "Auto Potions",
+    Content = "Uses age potions from your inventory on the pet you are farming. Only works on pets that can still grow. Pet Types lets you limit it to certain pets. Type pet names like dog or cat, separated by commas. Leave it blank to use potions on whatever pet is being farmed.",
+})
 PetTab:CreateToggle({ Name = "Auto Potions Enabled", CurrentValue = Config.Farm.AutoPotions.Enabled, Flag = "AutoPotionsEnabled", Callback = function(v) Config.Farm.AutoPotions.Enabled = v end })
 PetTab:CreateInput({
-    Name = "Pet Kinds (comma-sep, empty = any)",
+    Name = "Pet Types (blank = any)",
     CurrentValue = "",
     PlaceholderText = "dog, cat",
     RemoveTextAfterFocusLost = false,
@@ -7892,10 +7934,14 @@ PetTab:CreateInput({
     end,
 })
 
-PetTab:CreateSection("Auto open")
+PetTab:CreateSection("Auto open gifts and chests")
+PetTab:CreateParagraph({
+    Title = "Auto open",
+    Content = "Opens any gifts and chests sitting in your backpack while the farm runs. Use the Skip box below to keep certain items sealed. Type names separated by commas.",
+})
 PetTab:CreateToggle({ Name = "Auto Open Enabled", CurrentValue = Config.Farm.AutoOpen.Enabled, Flag = "AutoOpenEnabled", Callback = function(v) Config.Farm.AutoOpen.Enabled = v end })
 PetTab:CreateInput({
-    Name = "Exclude (comma-sep)",
+    Name = "Skip these items",
     CurrentValue = "",
     PlaceholderText = "biggift",
     RemoveTextAfterFocusLost = false,
@@ -7912,6 +7958,10 @@ PetTab:CreateInput({
 ----------------------------------------------------------------------------
 local EventTab = Window:CreateTab("Halloween Event", 4483362458)
 
+EventTab:CreateParagraph({
+    Title = "Event master switch",
+    Content = "Event Enabled must be on for anything below to run. Turn it off and the whole event section is skipped.",
+})
 EventTab:CreateToggle({ Name = "Event Enabled",   CurrentValue = Config.Farm.Event.Enabled,      Flag = "EventEnabled",  Callback = function(v) Config.Farm.Event.Enabled = v end })
 
 EventTab:CreateSection("Activities")
@@ -7924,9 +7974,13 @@ EventTab:CreateToggle({ Name = "Pigeon Nest",     CurrentValue = Config.Farm.Eve
 EventTab:CreateToggle({ Name = "Stray Cat",       CurrentValue = Config.Farm.Event.StrayCat,     Flag = "StrayCat",      Callback = function(v) Config.Farm.Event.StrayCat = v end })
 
 EventTab:CreateSection("Pet Pen")
+EventTab:CreateParagraph({
+    Title = "Pet Pen",
+    Content = "Runs the Pet Pen minigame on a timer. Minutes is how long each round lasts. Default slots is 4. Set slots to 5 only if you own the extra slot game pass. Pet Pen Stock also restocks the pen when it empties.",
+})
 EventTab:CreateToggle({ Name = "Pet Pen",         CurrentValue = Config.Farm.Event.PetPen,       Flag = "PetPen",        Callback = function(v) Config.Farm.Event.PetPen = v end })
 EventTab:CreateSlider({ Name = "Pet Pen Minutes", Range = { 1, 60 }, Increment = 1, Suffix = "min",   CurrentValue = Config.Farm.Event.PetPenMinutes, Flag = "PetPenMinutes", Callback = function(v) Config.Farm.Event.PetPenMinutes = v end })
-EventTab:CreateSlider({ Name = "Pet Pen Slots",   Range = { 1, 8 },  Increment = 1, Suffix = "slots", CurrentValue = Config.Farm.Event.PetPenSlots,   Flag = "PetPenSlots",   Callback = function(v) Config.Farm.Event.PetPenSlots = v end })
+EventTab:CreateSlider({ Name = "Pet Pen Slots (default 4, 5 requires extra slot game pass)",   Range = { 1, 5 },  Increment = 1, Suffix = "slots", CurrentValue = Config.Farm.Event.PetPenSlots,   Flag = "PetPenSlots",   Callback = function(v) Config.Farm.Event.PetPenSlots = v end })
 EventTab:CreateToggle({ Name = "Pet Pen Stock",   CurrentValue = Config.Farm.Event.PetPenStock,  Flag = "PetPenStock",   Callback = function(v) Config.Farm.Event.PetPenStock = v end })
 
 ----------------------------------------------------------------------------
@@ -7934,6 +7988,10 @@ EventTab:CreateToggle({ Name = "Pet Pen Stock",   CurrentValue = Config.Farm.Eve
 ----------------------------------------------------------------------------
 local WebTab = Window:CreateTab("Webhooks", 4483362458)
 
+WebTab:CreateParagraph({
+    Title = "Discord webhooks",
+    Content = "Optional. Nothing is sent anywhere unless you paste a webhook URL below. Summary is for periodic session reports. Alerts is for kick and error pings.",
+})
 WebTab:CreateToggle({
     Name = "Webhooks Enabled",
     CurrentValue = Config.Notifications.Enabled,
@@ -7958,6 +8016,10 @@ WebTab:CreateInput({
 })
 
 WebTab:CreateSection("When to send")
+WebTab:CreateParagraph({
+    Title = "Triggers",
+    Content = "Send On Task Complete is spammy, one message per completed pet need. The rest are reasonable.",
+})
 WebTab:CreateSlider({
     Name = "Summary Interval",
     Range = { 0, 240 }, Increment = 5, Suffix = "min",
@@ -7972,6 +8034,10 @@ WebTab:CreateToggle({ Name = "Send On Start/Stop",         CurrentValue = Config
 WebTab:CreateToggle({ Name = "Send Test Message On Start", CurrentValue = Config.Notifications.SendTestMessageOnStart,  Flag = "SendTestOnStart",    Callback = function(v) Config.Notifications.SendTestMessageOnStart = v end })
 
 WebTab:CreateSection("Ping")
+WebTab:CreateParagraph({
+    Title = "Discord mention",
+    Content = "Paste your Discord user ID (just the digits) to be mentioned in the webhook messages you turn on below.",
+})
 WebTab:CreateInput({
     Name = "Ping Discord User ID",
     CurrentValue = Config.Notifications.PingDiscordUserId,
@@ -7992,6 +8058,11 @@ WebTab:CreateToggle({ Name = "Ping On Previous Session",  CurrentValue = Config.
 --  CONFIGS
 ----------------------------------------------------------------------------
 local ConfigTab = Window:CreateTab("Configs", 4483362458)
+
+ConfigTab:CreateParagraph({
+    Title = "Save your setups",
+    Content = "Type a name, press Save Profile, and your current settings are saved. Pick a saved one from the dropdown below and press Load Selected to switch to it.",
+})
 
 local HttpService = game:GetService("HttpService")
 local PROFILE_DIR = "AdoptMeFarm/profiles"
