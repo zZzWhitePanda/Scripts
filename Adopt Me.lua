@@ -129,6 +129,8 @@ local function stopFarm()
     else
         Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Not running.", Duration = 4 })
     end
+    started = false
+    env.AdoptMeFarm = nil
 end
 
 local function startFarm()
