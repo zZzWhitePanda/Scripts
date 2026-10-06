@@ -4,6 +4,15 @@
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Debug log capture (shared between the GUI and the farm's shadowed print/warn)
+local DebugLog = { lines = {}, max = 400 }
+local function logCapture(tag, line)
+    table.insert(DebugLog.lines, "[" .. os.date("%H:%M:%S") .. "][" .. tag .. "] " .. tostring(line))
+    while #DebugLog.lines > DebugLog.max do
+        table.remove(DebugLog.lines, 1)
+    end
+end
+
 local Window = Rayfield:CreateWindow({
     Name = "Adopt Me Farm",
     LoadingTitle = "Adopt Me Farm",
@@ -109,8 +118,14 @@ local function startFarm()
     env.AdoptMeFarmSettings = Config
     Rayfield:Notify({ Title = "Adopt Me Farm", Content = "Starting...", Duration = 4 })
     task.spawn(function()
-        local print = function() end
-        local warn = function() end
+        -- Capture every print/warn from the farm into DebugLog. Console stays silent.
+        local function _fmt(...)
+            local args = { ... }
+            for i = 1, select("#", ...) do args[i] = tostring(args[i]) end
+            return table.concat(args, " ")
+        end
+        local print = function(...) logCapture("LOG",  _fmt(...)) end
+        local warn  = function(...) logCapture("WARN", _fmt(...)) end
 
         local UserConfig = Config
         --==================================================================================
@@ -8188,6 +8203,80 @@ ConfigTab:CreateButton({
         if ProfileDropdown and ProfileDropdown.Refresh then
             ProfileDropdown:Refresh(listProfiles(), false)
         end
+    end,
+})
+
+----------------------------------------------------------------------------
+--  DEBUG
+----------------------------------------------------------------------------
+local DebugTab = Window:CreateTab("Debug", 4483362458)
+
+DebugTab:CreateParagraph({
+    Title = "What this is",
+    Content = "Captures everything the farm would normally print to console. Use this if the farm is not doing what you expect. Press Refresh to pull the latest lines, then Copy to Clipboard or Save to File and send it over.",
+})
+
+local DebugView = DebugTab:CreateParagraph({
+    Title = "Captured output (press Refresh)",
+    Content = "No lines yet.",
+})
+
+local function pullLines(count)
+    local total = #DebugLog.lines
+    if total == 0 then return "No lines yet." end
+    local start = math.max(1, total - count + 1)
+    local chunk = {}
+    for i = start, total do table.insert(chunk, DebugLog.lines[i]) end
+    return table.concat(chunk, "\n")
+end
+
+DebugTab:CreateButton({
+    Name = "Refresh (last 60 lines)",
+    Callback = function()
+        if DebugView and DebugView.Set then
+            DebugView:Set({ Title = "Captured output (" .. #DebugLog.lines .. " total)", Content = pullLines(60) })
+        end
+    end,
+})
+
+DebugTab:CreateButton({
+    Name = "Copy All To Clipboard",
+    Callback = function()
+        local clip = (type(setclipboard) == "function" and setclipboard)
+            or (type(toclipboard) == "function" and toclipboard)
+        if not clip then
+            Rayfield:Notify({ Title = "Debug", Content = "Executor has no clipboard function.", Duration = 4 })
+            return
+        end
+        pcall(clip, table.concat(DebugLog.lines, "\n"))
+        Rayfield:Notify({ Title = "Debug", Content = "Copied " .. #DebugLog.lines .. " lines.", Duration = 3 })
+    end,
+})
+
+DebugTab:CreateButton({
+    Name = "Save To File",
+    Callback = function()
+        if type(writefile) ~= "function" then
+            Rayfield:Notify({ Title = "Debug", Content = "Executor has no writefile.", Duration = 4 })
+            return
+        end
+        if type(isfolder) == "function" and type(makefolder) == "function" and not isfolder("AdoptMeFarm") then
+            makefolder("AdoptMeFarm")
+        end
+        local name = "AdoptMeFarm/debug_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
+        pcall(writefile, name, table.concat(DebugLog.lines, "\n"))
+        Rayfield:Notify({ Title = "Debug", Content = "Saved to " .. name, Duration = 5 })
+    end,
+})
+
+DebugTab:CreateButton({
+    Name = "Clear",
+    Callback = function()
+        DebugLog.lines = {}
+        if DebugView and DebugView.Set then
+            DebugView:Set({ Title = "Captured output (0 total)", Content = "No lines yet." })
+        end
+        Rayfield:Notify({ Title = "Debug", Content = "Cleared.", Duration = 3 })
     end,
 })
 
