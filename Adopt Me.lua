@@ -5,11 +5,34 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Debug log capture (shared between the GUI and the farm's shadowed print/warn)
-local DebugLog = { lines = {}, max = 400 }
+local DebugLog = { lines = {}, max = 600, file = "AdoptMeFarm/debug_latest.log" }
+
+-- Make sure the folder + an empty file exist as soon as the script loads.
+pcall(function()
+    if type(isfolder) == "function" and type(makefolder) == "function" and not isfolder("AdoptMeFarm") then
+        makefolder("AdoptMeFarm")
+    end
+    if type(writefile) == "function" then
+        writefile(DebugLog.file, "")
+    end
+end)
+
 local function logCapture(tag, line)
-    table.insert(DebugLog.lines, "[" .. os.date("%H:%M:%S") .. "][" .. tag .. "] " .. tostring(line))
+    local text = tostring(line)
+    -- Drop the farm's Disclosure block completely. It must never appear anywhere.
+    if text:find("%[Disclosure%]") or text:find("^===== AdoptMe Farm") then
+        return
+    end
+    local entry = "[" .. os.date("%H:%M:%S") .. "][" .. tag .. "] " .. text
+    table.insert(DebugLog.lines, entry)
     while #DebugLog.lines > DebugLog.max do
         table.remove(DebugLog.lines, 1)
+    end
+    -- Append live to the on-disk log so you can tail it even if the GUI paragraph is slow.
+    if type(appendfile) == "function" then
+        pcall(appendfile, DebugLog.file, entry .. "\n")
+    elseif type(writefile) == "function" then
+        pcall(writefile, DebugLog.file, table.concat(DebugLog.lines, "\n") .. "\n")
     end
 end
 
@@ -8212,49 +8235,40 @@ ConfigTab:CreateButton({
 local DebugTab = Window:CreateTab("Debug", 4483362458)
 
 DebugTab:CreateParagraph({
-    Title = "What this is",
-    Content = "Captures everything the farm would normally print to console. Use this if the farm is not doing what you expect. Press Refresh to pull the latest lines, then Copy to Clipboard or Save to File and send it over.",
+    Title = "How to send me logs",
+    Content = "Every line the farm would normally print is written live to AdoptMeFarm/debug_latest.log on your exploit workspace. Nothing hits the real console. The Disclosure block is filtered out and never appears. When the farm acts weird, press Copy All Lines or just open the file directly.",
 })
 
-local DebugView = DebugTab:CreateParagraph({
-    Title = "Captured output (press Refresh)",
-    Content = "No lines yet.",
-})
-
-local function pullLines(count)
-    local total = #DebugLog.lines
-    if total == 0 then return "No lines yet." end
-    local start = math.max(1, total - count + 1)
-    local chunk = {}
-    for i = start, total do table.insert(chunk, DebugLog.lines[i]) end
-    return table.concat(chunk, "\n")
-end
+local function joinLines() return table.concat(DebugLog.lines, "\n") end
 
 DebugTab:CreateButton({
-    Name = "Refresh (last 60 lines)",
+    Name = "Show Line Count",
     Callback = function()
-        if DebugView and DebugView.Set then
-            DebugView:Set({ Title = "Captured output (" .. #DebugLog.lines .. " total)", Content = pullLines(60) })
-        end
+        local last = DebugLog.lines[#DebugLog.lines] or "(no lines captured yet)"
+        Rayfield:Notify({
+            Title = "Debug (" .. #DebugLog.lines .. " lines)",
+            Content = last,
+            Duration = 8,
+        })
     end,
 })
 
 DebugTab:CreateButton({
-    Name = "Copy All To Clipboard",
+    Name = "Copy All Lines To Clipboard",
     Callback = function()
         local clip = (type(setclipboard) == "function" and setclipboard)
             or (type(toclipboard) == "function" and toclipboard)
         if not clip then
-            Rayfield:Notify({ Title = "Debug", Content = "Executor has no clipboard function.", Duration = 4 })
+            Rayfield:Notify({ Title = "Debug", Content = "Executor has no clipboard function. Open the log file instead.", Duration = 6 })
             return
         end
-        pcall(clip, table.concat(DebugLog.lines, "\n"))
+        pcall(clip, joinLines())
         Rayfield:Notify({ Title = "Debug", Content = "Copied " .. #DebugLog.lines .. " lines.", Duration = 3 })
     end,
 })
 
 DebugTab:CreateButton({
-    Name = "Save To File",
+    Name = "Save Snapshot (timestamped)",
     Callback = function()
         if type(writefile) ~= "function" then
             Rayfield:Notify({ Title = "Debug", Content = "Executor has no writefile.", Duration = 4 })
@@ -8264,8 +8278,8 @@ DebugTab:CreateButton({
             makefolder("AdoptMeFarm")
         end
         local name = "AdoptMeFarm/debug_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
-        pcall(writefile, name, table.concat(DebugLog.lines, "\n"))
-        Rayfield:Notify({ Title = "Debug", Content = "Saved to " .. name, Duration = 5 })
+        pcall(writefile, name, joinLines())
+        Rayfield:Notify({ Title = "Debug", Content = "Saved to " .. name, Duration = 6 })
     end,
 })
 
@@ -8273,11 +8287,14 @@ DebugTab:CreateButton({
     Name = "Clear",
     Callback = function()
         DebugLog.lines = {}
-        if DebugView and DebugView.Set then
-            DebugView:Set({ Title = "Captured output (0 total)", Content = "No lines yet." })
-        end
+        if type(writefile) == "function" then pcall(writefile, DebugLog.file, "") end
         Rayfield:Notify({ Title = "Debug", Content = "Cleared.", Duration = 3 })
     end,
+})
+
+DebugTab:CreateParagraph({
+    Title = "Log file location",
+    Content = "AdoptMeFarm/debug_latest.log (inside your exploit's workspace folder). Open it in Notepad while the farm is running to see live output.",
 })
 
 Rayfield:LoadConfiguration()
