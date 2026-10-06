@@ -4106,6 +4106,19 @@ __moduleSources["Game/Travel"] = function(...)
                 if destination == "MainMap" then
                     return self:_checkPlacedOnMainMap(recipe, me)
                 end
+                -- Universal kickback guard for ALL outdoor destinations (cat_cafe, salon, pizza_party, school,
+                -- camping, beach_party, mystery, etc.). The game sometimes flips the interior to the destination
+                -- for ~1 s then yanks the player back home (causes the white loading screen limbo). Verify the
+                -- interior state actually HOLDS at the destination for a few seconds before declaring success.
+                local arrivedAt = now
+                local stableUntil = Util.now() + 5
+                while Util.now() < stableUntil do
+                    task.wait(0.5)
+                    local check = self._state:get("player.interior")
+                    if check == GameConstants.HouseInteriorName or check == before then
+                        return false, "arrived at " .. tostring(arrivedAt) .. " then yanked back to " .. tostring(check)
+                    end
+                end
                 return true
             end
             -- Live 0.8.x: going home, sometimes my house data never arrives ("still in nil"). After 6 s ask again,
@@ -7048,9 +7061,9 @@ __moduleSources["Game/TaskManager"] = function(...)
         -- My data then has no place (house_interior = {} -> player.interior nil). After 25 s: go home again.
         if self._state:get("player.interior") == nil and self._hadPlace then
             self._transitSince = self._transitSince or Util.now()
-            if Util.now() - self._transitSince > 25 then
+            if Util.now() - self._transitSince > 10 then
                 self._transitSince = nil
-                self._logger:warn("Tasks", "Stuck while changing place for 25 s: going home to recover")
+                self._logger:warn("Tasks", "Stuck while changing place for 10 s: going home to recover")
                 self:_start("recover", "recover: go home", Tasks.recover, nil)
                 return
             end
