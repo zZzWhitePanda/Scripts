@@ -65,7 +65,7 @@ local Config = {
             PetPenMinutes = 15, PetPenSlots = 4, PetPenStock = true,
         },
     },
-    Logging = { ConsoleLevel = "OFF", FileEnabled = false, SessionFile = false },
+    Logging = { ConsoleLevel = "DEBUG", FileEnabled = false, SessionFile = false },
     Telemetry = { Enabled = true },
     Notifications = {
         Enabled = true,
