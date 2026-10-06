@@ -4022,26 +4022,33 @@ __moduleSources["Game/Travel"] = function(...)
             self._logger:debug("Travel", "Already at " .. destination)
             return true
         end
-        -- Live 1.2.0: 0 of 177 house-door exits got me out (data: "?" then back in the house after a reset). Off by
-        -- default until the rest of the game's exit (after UnsubscribeFromHouse) is recorded.
-        if self._farmConfig and self._farmConfig.HouseDoorExit and not recipe.ownHouse and self:isAt(GameConstants.HouseInteriorName) then
-            local out, outReason = self:exitHouse()
-            if not out then
-                self._logger:warn("Travel", "House door exit did not work (" .. tostring(outReason) .. "): going directly")
-            elseif self:isAt(destination) then
-                return true
+        -- Live observation (user logs 01:38:x): both exitHouse() and _gameTravel() hit the "kickback to housing"
+        -- bug when leaving home for an outdoor destination; the remote route (DoorEnter + SetLocation) succeeds.
+        -- Running the first two anyway wastes ~45 s and often unequips the pet mid-trip. So when leaving home
+        -- for a non-home destination, skip straight to the remote route.
+        local leavingHomeOutdoors = not recipe.ownHouse and self:isAt(GameConstants.HouseInteriorName)
+        if not leavingHomeOutdoors then
+            if self._farmConfig and self._farmConfig.HouseDoorExit and not recipe.ownHouse and self:isAt(GameConstants.HouseInteriorName) then
+                local out, outReason = self:exitHouse()
+                if not out then
+                    self._logger:warn("Travel", "House door exit did not work (" .. tostring(outReason) .. "): going directly")
+                elseif self:isAt(destination) then
+                    return true
+                end
             end
-        end
-        if self._farmConfig and self._farmConfig.GameTravel ~= false then
-            local arrived, why = self:_gameTravel(destination, recipe)
-            if arrived then
-                return true
+            if self._farmConfig and self._farmConfig.GameTravel ~= false then
+                local arrived, why = self:_gameTravel(destination, recipe)
+                if arrived then
+                    return true
+                end
+                self._logger:info("Travel", "Game travel to " .. destination .. " did not work (" .. tostring(why)
+                    .. "): using the remote route")
+                if self:isAt(destination) then
+                    return true
+                end
             end
-            self._logger:info("Travel", "Game travel to " .. destination .. " did not work (" .. tostring(why)
-                .. "): using the remote route")
-            if self:isAt(destination) then
-                return true
-            end
+        else
+            self._logger:info("Travel", "Leaving home for " .. destination .. ": using the remote route directly (door+game-travel skipped as broken)")
         end
         local before = self._state:get("player.interior")
         self._logger:info("Travel", "Going to " .. destination .. " (now in " .. tostring(before) .. ")")
@@ -4455,7 +4462,7 @@ __moduleSources["Game/Tasks"] = function(...)
         ctx.waitUntil(function()
             model, reason = ctx.petLocator:findModel(unique)
             return model ~= nil
-        end, 10)
+        end, 20)
         return model, reason
     end
 
