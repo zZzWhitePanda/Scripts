@@ -4510,6 +4510,20 @@ __moduleSources["Game/Tasks"] = function(...)
             model, reason = ctx.petLocator:findModel(unique)
             return model ~= nil
         end, 20)
+        -- White-screen limbo detection: if the pet model never loads AND we are NOT at home, the client is
+        -- almost certainly frozen in the Roblox place-change transition. Server says we are on MainMap but
+        -- the visual client is stuck on a white screen (user confirmed). The game author documented that
+        -- TeamAPI/Spawn (respawn home) is what unsticks it. Trigger that so the stuck session can recover
+        -- instead of sitting silent for 20+ seconds while the player stares at a white screen.
+        if not model and ctx.state and ctx.interaction then
+            local where = ctx.state:get("player.interior")
+            if where ~= nil and where ~= GameConstants.HouseInteriorName then
+                ctx.logger:warn("Tasks", "Pet model never loaded at " .. tostring(where)
+                    .. " (white-screen limbo): respawning home to recover")
+                pcall(function() ctx.interaction:send("Respawn") end)
+                reason = "white-screen limbo at " .. tostring(where) .. ": respawned home"
+            end
+        end
         return model, reason
     end
 
