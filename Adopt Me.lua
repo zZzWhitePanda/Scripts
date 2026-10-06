@@ -4056,11 +4056,23 @@ __moduleSources["Game/Travel"] = function(...)
             self._logger:debug("Travel", "Already at " .. destination)
             return true
         end
-        -- Live observation (user logs 01:38:x): both exitHouse() and _gameTravel() hit the "kickback to housing"
-        -- bug when leaving home for an outdoor destination; the remote route (DoorEnter + SetLocation) succeeds.
-        -- Running the first two anyway wastes ~45 s and often unequips the pet mid-trip. So when leaving home
-        -- for a non-home destination, skip straight to the remote route.
+        -- Correction (2026-10-07): the remote-only route arrives on MainMap state-wise but leaves the client
+        -- stuck in white-screen limbo because it never calls the character-anchor/place/un-anchor sequence
+        -- that InteriorsM.enter does (see comment on _gameTravel). Prefer game-travel (InteriorsM) FIRST,
+        -- especially when leaving home where it matters most. Fall back to the remote route only if the
+        -- game module isn't available or really fails.
         local leavingHomeOutdoors = not recipe.ownHouse and self:isAt(GameConstants.HouseInteriorName)
+        if self._farmConfig and self._farmConfig.GameTravel ~= false then
+            local arrived, why = self:_gameTravel(destination, recipe)
+            if arrived then
+                return true
+            end
+            self._logger:info("Travel", "Game travel to " .. destination .. " did not work (" .. tostring(why)
+                .. "): using the remote route")
+            if self:isAt(destination) then
+                return true
+            end
+        end
         if not leavingHomeOutdoors then
             if self._farmConfig and self._farmConfig.HouseDoorExit and not recipe.ownHouse and self:isAt(GameConstants.HouseInteriorName) then
                 local out, outReason = self:exitHouse()
@@ -4070,19 +4082,6 @@ __moduleSources["Game/Travel"] = function(...)
                     return true
                 end
             end
-            if self._farmConfig and self._farmConfig.GameTravel ~= false then
-                local arrived, why = self:_gameTravel(destination, recipe)
-                if arrived then
-                    return true
-                end
-                self._logger:info("Travel", "Game travel to " .. destination .. " did not work (" .. tostring(why)
-                    .. "): using the remote route")
-                if self:isAt(destination) then
-                    return true
-                end
-            end
-        else
-            self._logger:info("Travel", "Leaving home for " .. destination .. ": using the remote route directly (door+game-travel skipped as broken)")
         end
         local before = self._state:get("player.interior")
         self._logger:info("Travel", "Going to " .. destination .. " (now in " .. tostring(before) .. ")")
