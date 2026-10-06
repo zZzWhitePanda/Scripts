@@ -2330,10 +2330,21 @@ __moduleSources["Game/GameConstants"] = function(...)
          sleepy: basicbed (pet + baby, watch5), dirty: stylishshower (pet + baby, watch5),
          toilet: toilet (pet; rate 1/7 seen in session_20260927_095123). ]]
     GameConstants.FurnitureForAilment = {
-        sleepy = { "basicbed" },
+        sleepy = {
+            "basicbed",
+            -- Halloween / scary variants
+            "scary_2021_grave_pet_bed",
+            "scary_2021_spider_web_bed",
+            "scary_2021_cage_crib",
+        },
         -- watch8_20260928_123452 (the game, alt house): modernshower f-27 UseBlock for the baby AND the pet;
         -- cheap_pet_bathtub_tutorial f-15 UseBlock for the pet (occupied UseBlock = pet). Pet-only: see below.
-        dirty = { "stylishshower", "modernshower", "cheap_pet_bathtub_tutorial" },
+        dirty = {
+            "stylishshower", "modernshower", "cheap_pet_bathtub_tutorial",
+            -- Halloween / scary variants
+            "scary_2021_toxic_waste_shower",
+            "scary_2021_slime_cauldron_bath",
+        },
         toilet = { "toilet" },
     }
     -- watch8: pet on the free food bowl (occupied UseBlock = pet) -> hungry rate 1/7 -> completed (twice)
@@ -2346,6 +2357,12 @@ __moduleSources["Game/GameConstants"] = function(...)
         basicbed = "Seat1",
         stylishshower = "UseBlock",
         toilet = "Seat1",
+        -- Halloween / scary variants
+        scary_2021_grave_pet_bed = "Seat1",
+        scary_2021_spider_web_bed = "Seat1",
+        scary_2021_cage_crib = "Seat1",
+        scary_2021_toxic_waste_shower = "UseBlock",
+        scary_2021_slime_cauldron_bath = "UseBlock",
     }
 
     --[[ ITEM NEEDS (watch7_20260927_231531, 11_GAME_FINDINGS 7f). Only item ids whose effect was seen:
