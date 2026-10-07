@@ -7277,17 +7277,26 @@ __moduleSources["Game/TaskManager"] = function(...)
         end
         local E = GameConstants.Event
         local KEYS = GameConstants.DataKeys
-        if event.GhostGallery and due("ghost_gallery") and self._minigame and self._minigame.available then
-            local serverNow = Minigame.serverNow()
-            -- User manually joined a round: take over mid-round instead of waiting for the next cycle slot.
+        -- Takeover check: if the player is already inside a Ghost Gallery round (manual join), start the
+        -- task immediately regardless of cooldowns / blocked state so we never sit idle through a round.
+        if event.GhostGallery and self._minigame and self._minigame.available then
             local mg = self._minigame
             local interior = tostring(self._state:get("player.interior") or "")
-            local alreadyInRound = mg.join ~= nil and interior:sub(1, #GameConstants.Event.MinigameInteriorPrefix)
-                == GameConstants.Event.MinigameInteriorPrefix
-            if alreadyInRound then
+            local prefix = GameConstants.Event.MinigameInteriorPrefix
+            if interior:sub(1, #prefix) == prefix then
+                if not self._loggedTakeover then
+                    self._loggedTakeover = true
+                    self._logger:info("Event", string.format("Detected manual Ghost Gallery join (interior=%s, mg.join=%s): taking over",
+                        interior, tostring(mg.join ~= nil)))
+                end
                 return "ghost_gallery", "Ghost Gallery round (joined manually)", EventTasks.ghostGallery,
-                    { start = serverNow - 5, alreadyJoined = true }
+                    { start = Minigame.serverNow() - 5, alreadyJoined = true }
+            else
+                self._loggedTakeover = nil
             end
+        end
+        if event.GhostGallery and due("ghost_gallery") and self._minigame and self._minigame.available then
+            local serverNow = Minigame.serverNow()
             local start = EventTasks.nextRoundStart(data:get(KEYS.GhostCycle), serverNow)
             if start and start - serverNow <= GHOST_GALLERY_LEAD_SECONDS and start - serverNow > -10 then
                 return "ghost_gallery", "Ghost Gallery round", EventTasks.ghostGallery, { start = start }
