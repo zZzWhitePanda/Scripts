@@ -6328,41 +6328,53 @@ __moduleSources["Game/EventTasks"] = function(...)
             end
             local candyBefore = tonumber(ctx.gameData:get(KEYS.Candy))
             local keysBefore = #ctx.gameData:itemsOfId(TOYS, E.RustyKey)
-            local arrived, why = ctx.travel:goTo("HauntedManor")
-            if not arrived then
-                return false, "travel to the Manor failed: " .. tostring(why)
-            end
-            mg:reset()
-            ctx.waitUntil(function()
-                return Minigame.serverNow() >= start - 3
-            end, math.max(0, start - Minigame.serverNow()) + 5)
-            -- 1) join: as the game does when the round opens (halloween11/12)
-            ctx.logger:info("Event", "Ghost Gallery: joining the round")
-            local joinUntil = Util.now() + 30
-            while not mg.joinAcceptedAt and not mg.join and Util.now() < joinUntil do
-                ctx.interaction:send("MinigameJoin", E.MinigameId, true, nil)
-                ctx.waitUntil(function()
-                    return mg.joinAcceptedAt ~= nil or mg.join ~= nil
-                end, 3)
-            end
-            if not mg.joinAcceptedAt and not mg.join then
-                return false, "join was not accepted"
-            end
-            if not ctx.waitUntil(function()
-                return mg.join ~= nil
-            end, 40) then
-                return false, "accepted, but the round did not take me in"
-            end
-            local gameId = mg.join.gameId
-            -- 2) the game's own client follows into the round (it sent AttemptJoin(gameId) itself, halloween11/12)
+            local alreadyJoined = group and group.alreadyJoined
             local function inRound()
                 return ctx.travel:isAt(E.MinigameInteriorPrefix)
             end
-            if not ctx.waitUntil(inRound, 5) then
-                ctx.interaction:send("MinigameJoin", gameId, true, nil)
-            end
-            if not ctx.waitUntil(inRound, 20) then
-                return false, "did not arrive in the minigame"
+            local gameId
+            if alreadyJoined then
+                -- User (or the game) already took us into the round. Skip travel/join/wait-for-round-start
+                -- and go straight to equipping the vacuum and vacuuming ghosts.
+                ctx.logger:info("Event", "Ghost Gallery: taking over an in-progress round")
+                gameId = mg.join and mg.join.gameId
+                if not inRound() then
+                    return false, "flagged as in-round but interior does not match the minigame"
+                end
+            else
+                local arrived, why = ctx.travel:goTo("HauntedManor")
+                if not arrived then
+                    return false, "travel to the Manor failed: " .. tostring(why)
+                end
+                mg:reset()
+                ctx.waitUntil(function()
+                    return Minigame.serverNow() >= start - 3
+                end, math.max(0, start - Minigame.serverNow()) + 5)
+                -- 1) join: as the game does when the round opens (halloween11/12)
+                ctx.logger:info("Event", "Ghost Gallery: joining the round")
+                local joinUntil = Util.now() + 30
+                while not mg.joinAcceptedAt and not mg.join and Util.now() < joinUntil do
+                    ctx.interaction:send("MinigameJoin", E.MinigameId, true, nil)
+                    ctx.waitUntil(function()
+                        return mg.joinAcceptedAt ~= nil or mg.join ~= nil
+                    end, 3)
+                end
+                if not mg.joinAcceptedAt and not mg.join then
+                    return false, "join was not accepted"
+                end
+                if not ctx.waitUntil(function()
+                    return mg.join ~= nil
+                end, 40) then
+                    return false, "accepted, but the round did not take me in"
+                end
+                gameId = mg.join.gameId
+                -- 2) the game's own client follows into the round (it sent AttemptJoin(gameId) itself, halloween11/12)
+                if not ctx.waitUntil(inRound, 5) then
+                    ctx.interaction:send("MinigameJoin", gameId, true, nil)
+                end
+                if not ctx.waitUntil(inRound, 20) then
+                    return false, "did not arrive in the minigame"
+                end
             end
             -- From here on I am in the round: every way out waits for the round to end (live 1.5.0: a failed round left
             -- the next job trying to travel out of the minigame interior while the round was still running).
@@ -7267,6 +7279,15 @@ __moduleSources["Game/TaskManager"] = function(...)
         local KEYS = GameConstants.DataKeys
         if event.GhostGallery and due("ghost_gallery") and self._minigame and self._minigame.available then
             local serverNow = Minigame.serverNow()
+            -- User manually joined a round: take over mid-round instead of waiting for the next cycle slot.
+            local mg = self._minigame
+            local interior = tostring(self._state:get("player.interior") or "")
+            local alreadyInRound = mg.join ~= nil and interior:sub(1, #GameConstants.Event.MinigameInteriorPrefix)
+                == GameConstants.Event.MinigameInteriorPrefix
+            if alreadyInRound then
+                return "ghost_gallery", "Ghost Gallery round (joined manually)", EventTasks.ghostGallery,
+                    { start = serverNow - 5, alreadyJoined = true }
+            end
             local start = EventTasks.nextRoundStart(data:get(KEYS.GhostCycle), serverNow)
             if start and start - serverNow <= GHOST_GALLERY_LEAD_SECONDS and start - serverNow > -10 then
                 return "ghost_gallery", "Ghost Gallery round", EventTasks.ghostGallery, { start = start }
