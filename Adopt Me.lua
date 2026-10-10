@@ -87,6 +87,16 @@ local Config = {
             PigeonNest = true, StrayCat = true, PetPen = true,
             PetPenMinutes = 15, PetPenSlots = 4, PetPenStock = true,
             Hauntlet = false,
+            AutoNest = false,
+            CandyPets = {
+                Enabled = false,
+                Pick = {},
+                KeepCandy = 0,
+                Buy = {
+                    { id = "halloween_2026_jump_scare",      price = 40000, max = 1 },
+                    { id = "halloween_2026_jacobean_pigeon", price = 4000,  max = 4 },
+                },
+            },
         },
     },
     Logging = { ConsoleLevel = "DEBUG", FileEnabled = false, SessionFile = false },
@@ -7112,6 +7122,95 @@ __moduleSources["Game/EventTasks"] = function(...)
         end,
     }
 
+    -- Nest state helper for AutoNest coordination between pigeon_nest and crypt
+    -- Returns: "COMPLETE" | "BUILD_NEST" | "COLLECT_TWIGS" | "WAIT_KEY" | "UNKNOWN", placed, held
+    function EventTasks.nestState(nest, held, keys)
+        if type(nest) ~= "table" then
+            return "UNKNOWN", 0, held or 0
+        end
+        local placed = tonumber(nest.twigs_contributed) or 0
+        held = held or 0
+        if placed >= E.NestTwigs then
+            return "COMPLETE", placed, held
+        elseif placed + held >= E.NestTwigs then
+            return "BUILD_NEST", placed, held
+        elseif (keys or 0) > 0 then
+            return "COLLECT_TWIGS", placed, held
+        end
+        return "WAIT_KEY", placed, held
+    end
+
+    -- Pick the first affordable Halloween pet from the Buy list that is in your Pick allowlist.
+    -- settings.Pick = { "halloween_2026_jump_scare", ... }  (empty = any from the Buy list, limited by `max`)
+    -- settings.KeepCandy = number  (candy the farm will never spend below)
+    function EventTasks.candyPetTarget(gameData, settings)
+        local candy = tonumber(gameData:get(GameConstants.DataKeys.Candy))
+        if not candy then
+            return nil
+        end
+        local keep = tonumber(settings.KeepCandy) or 0
+        if type(settings.Pick) == "table" and #settings.Pick > 0 then
+            local picked = {}
+            for _, id in ipairs(settings.Pick) do
+                picked[id] = true
+            end
+            for _, entry in ipairs(type(settings.Buy) == "table" and settings.Buy or {}) do
+                local id, price = entry.id or entry[1], tonumber(entry.price)
+                if type(id) == "string" and picked[id] and price and price > 0
+                    and candy - keep >= price then
+                    return { id = id, price = price }
+                end
+            end
+            return nil
+        end
+        -- Pick list empty: iterate the Buy list in order, limited by each entry's max owned.
+        for _, entry in ipairs(type(settings.Buy) == "table" and settings.Buy or {}) do
+            local id, price, max = entry.id or entry[1], tonumber(entry.price), tonumber(entry.max) or 0
+            if type(id) == "string" and price and price > 0 then
+                local owned = 0
+                for _ in pairs(gameData:petUniquesOfKind(id)) do
+                    owned += 1
+                end
+                if (max <= 0 or owned < max) and candy - keep >= price then
+                    return { id = id, price = price }
+                end
+            end
+        end
+        return nil
+    end
+
+    EventTasks.buyCandyPet = {
+        id = "candy_pet",
+        timeoutSeconds = 30,
+        run = function(ctx)
+            local settings = ctx.farmConfig.Event and ctx.farmConfig.Event.CandyPets or {}
+            local pick = EventTasks.candyPetTarget(ctx.gameData, settings)
+            if not pick then
+                return true
+            end
+            local before = ctx.gameData:petUniquesOfKind(pick.id)
+            local candyBefore = tonumber(ctx.gameData:get(GameConstants.DataKeys.Candy)) or 0
+            local sent, answer = ctx.interaction:send("BuyItem", GameConstants.EggCategory, pick.id, { buy_count = 1 })
+            local newUnique
+            ctx.waitUntil(function()
+                for unique in pairs(ctx.gameData:petUniquesOfKind(pick.id)) do
+                    if not before[unique] then
+                        newUnique = unique
+                        return true
+                    end
+                end
+                return false
+            end, 8)
+            if not newUnique then
+                return false, string.format("no %s arrived in your backpack (server answer: %s %s)", pick.id, tostring(sent),
+                    Util.truncate(tostring(answer), 60))
+            end
+            local candyAfter = tonumber(ctx.gameData:get(GameConstants.DataKeys.Candy)) or candyBefore
+            ctx.logger:success("Event", string.format("Bought %s for %d candy (candy left: %d)", pick.id, candyBefore - candyAfter, candyAfter))
+            return true
+        end,
+    }
+
     EventTasks._journalAt = nil
     EventTasks.hauntlet = {
         id = "hauntlet",
@@ -7308,7 +7407,7 @@ __moduleSources["Game/TaskManager"] = function(...)
 
     local TEAM_KEY = "team"
     -- Halloween / Pet Pen jobs (Game/EventTasks): seconds until the same job is looked at again (success or not).
-    local EVENT_RECHECK_SECONDS = { ghost_gallery = 120, stray_cat = 1800, crypt = 60, pigeon_nest = 60, quests = 300, pen_stock = 20, age_potion = 5, open_gift = 3, house_visits = 300, hauntlet = 90 }
+    local EVENT_RECHECK_SECONDS = { ghost_gallery = 120, stray_cat = 1800, crypt = 60, pigeon_nest = 60, quests = 300, pen_stock = 20, age_potion = 5, open_gift = 3, house_visits = 300, hauntlet = 90, candy_pet = 30 }
     local HAUNTLET_GHOST_GAP_SECONDS = 420 -- don't start a Hauntlet if a Ghost Gallery round opens within this many seconds
     local GHOST_GALLERY_LEAD_SECONDS = 75 -- start the trip to the Manor this long before the round
 
@@ -7739,6 +7838,30 @@ __moduleSources["Game/TaskManager"] = function(...)
     end
 
     -- The Halloween / Pet Pen job that is due now, or nil. Each job decides from MY data whether there is anything to do.
+    -- AutoNest: coordinates the pigeon_nest build with crypt twig collection.
+    -- Returns a state string so _selectEventJob can route tasks accordingly, or nil if autoNest off.
+    function TaskManager:_autoNest()
+        local event = self._farmConfig.Event
+        local data = self._gameData
+        if type(event) ~= "table" or event.AutoNest == false or event.PigeonNest == false or not data then
+            return nil
+        end
+        local E = GameConstants.Event
+        local stateName, placed, held = EventTasks.nestState(data:get(GameConstants.DataKeys.PigeonNest),
+            #data:itemsOfId(GameConstants.ToyCategory, E.Twig), #data:itemsOfId(GameConstants.ToyCategory, E.RustyKey))
+        local progress = placed + held
+        local signature = stateName .. ":" .. progress
+        if signature ~= self._nestSignature then
+            self._nestSignature = signature
+            if stateName == "COMPLETE" then
+                self._logger:info("AutoNest", "Nest completed: one-time objective complete (" .. placed .. "/" .. E.NestTwigs .. ")")
+            elseif stateName ~= "UNKNOWN" then
+                self._logger:info("AutoNest", string.format("%s, twig progress: %d/%d", stateName, progress, E.NestTwigs))
+            end
+        end
+        return stateName
+    end
+
     function TaskManager:_selectEventJob()
         local event = self._farmConfig.Event
         local data = self._gameData
@@ -7816,6 +7939,22 @@ __moduleSources["Game/TaskManager"] = function(...)
             end
             if pending or (due("hauntlet") and not ghostSoon) then
                 return "hauntlet", "Hauntlet run", EventTasks.hauntlet, nil
+            end
+        end
+        -- AutoNest: route pigeon_nest or crypt based on whether we have twigs or keys.
+        local nestState = event.PigeonNest ~= false and self:_autoNest()
+        if nestState == "BUILD_NEST" and due("pigeon_nest") then
+            return "pigeon_nest", "build the nest (AutoNest)", EventTasks.pigeonNest, nil
+        elseif nestState == "COLLECT_TWIGS" and event.Crypt and due("crypt") and data:get(KEYS.Crypt) ~= nil
+            and EventTasks.cryptPlan(data:get(KEYS.Crypt)) then
+            return "crypt", "collect twigs in the Crypt (AutoNest)", EventTasks.crypt, nil
+        end
+        -- Candy Pet buying: spend candy on Halloween pets from your Buy list.
+        local candyPets = event.CandyPets
+        if type(candyPets) == "table" and candyPets.Enabled and due("candy_pet") and data:petInventoryKnown() then
+            local pick = EventTasks.candyPetTarget(data, candyPets)
+            if pick then
+                return "candy_pet", "buy " .. pick.id .. " (" .. pick.price .. " candy)", EventTasks.buyCandyPet, nil
             end
         end
         if event.StrayCat and due("stray_cat") then
@@ -8701,6 +8840,54 @@ EventTab:CreateToggle({
     CurrentValue = Config.Farm.Event.Hauntlet,
     Flag = "Hauntlet",
     Callback = function(v) Config.Farm.Event.Hauntlet = v end,
+})
+
+EventTab:CreateSection("Auto Nest")
+EventTab:CreateParagraph({
+    Title = "AutoNest",
+    Content = "Coordinates Pigeon Nest with the Crypt. When you have Rusty Keys but need more twigs, it opens Crypt graves to collect twigs. When you have enough twigs, it switches to building the nest. Requires Pigeon Nest and Crypt to also be on.",
+})
+EventTab:CreateToggle({
+    Name = "AutoNest",
+    CurrentValue = Config.Farm.Event.AutoNest,
+    Flag = "AutoNest",
+    Callback = function(v) Config.Farm.Event.AutoNest = v end,
+})
+
+EventTab:CreateSection("Candy Pet Shop")
+EventTab:CreateParagraph({
+    Title = "Auto buy pets with candy",
+    Content = "Spends your Halloween candy on pets from the Candy Pet Shop. Pick which pets you want below and set a candy reserve you never spend below. Jacobean Pigeon = 4000 candy, Jump Scare = 40000 candy.",
+})
+EventTab:CreateToggle({
+    Name = "Candy Pets Enabled",
+    CurrentValue = Config.Farm.Event.CandyPets.Enabled,
+    Flag = "CandyPetsEnabled",
+    Callback = function(v) Config.Farm.Event.CandyPets.Enabled = v end,
+})
+EventTab:CreateDropdown({
+    Name = "Pets to Buy",
+    Options = { "halloween_2026_jacobean_pigeon", "halloween_2026_jump_scare" },
+    CurrentOption = Config.Farm.Event.CandyPets.Pick,
+    MultipleOptions = true,
+    Flag = "CandyPetsPick",
+    Callback = function(v)
+        local list = {}
+        if type(v) == "table" then
+            for _, item in ipairs(v) do table.insert(list, item) end
+        elseif type(v) == "string" and v ~= "" then
+            table.insert(list, v)
+        end
+        Config.Farm.Event.CandyPets.Pick = list
+    end,
+})
+EventTab:CreateInput({
+    Name = "Keep Candy (never spend below)",
+    CurrentValue = tostring(Config.Farm.Event.CandyPets.KeepCandy),
+    PlaceholderText = "0",
+    RemoveTextAfterFocusLost = false,
+    Flag = "CandyPetsKeep",
+    Callback = function(v) Config.Farm.Event.CandyPets.KeepCandy = tonumber(v) or 0 end,
 })
 
 ----------------------------------------------------------------------------
